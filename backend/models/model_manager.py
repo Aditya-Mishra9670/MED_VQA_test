@@ -354,9 +354,24 @@ class ModelManager:
     def _check_llava_package(self) -> bool:
         """Check if the LLaVA package is importable."""
         try:
-            import llava  # noqa: F401
+            import transformers
+            from unittest.mock import patch
+            orig_register_config = transformers.AutoConfig.register
+            orig_register_model = transformers.AutoModelForCausalLM.register
+
+            def patched_register_config(cls, model_type, config_class, **kwargs):
+                kwargs['exist_ok'] = True
+                return orig_register_config.__func__(cls, model_type, config_class, **kwargs)
+
+            def patched_register_model(cls, config_class, model_class, **kwargs):
+                kwargs['exist_ok'] = True
+                return orig_register_model.__func__(cls, config_class, model_class, **kwargs)
+
+            with patch.object(transformers.AutoConfig, 'register', classmethod(patched_register_config)), \
+                 patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)):
+                import llava  # noqa: F401
             return True
-        except ImportError:
+        except Exception:
             return False
 
     def _check_package(self, package_name: str) -> bool:
