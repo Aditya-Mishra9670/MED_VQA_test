@@ -94,17 +94,33 @@ class STLLaVAMed:
 
     def _load_via_llava(self) -> None:
         """Load using the LLaVA package's model builder."""
-        from llava.model.builder import load_pretrained_model
-        from llava.mm_utils import get_model_name_from_path
-
+        import transformers
         from unittest.mock import patch
-        from llava.model.multimodal_encoder.clip_encoder import CLIPVisionTower
 
-        def patched_build_vision_tower(vision_tower_cfg, **kwargs):
-            vision_tower = getattr(vision_tower_cfg, 'mm_vision_tower', getattr(vision_tower_cfg, 'vision_tower', None))
-            if vision_tower and "stllava-med" in vision_tower.lower():
-                return CLIPVisionTower(vision_tower, args=vision_tower_cfg, **kwargs)
-            raise ValueError(f'Unknown vision tower: {vision_tower}')
+        # Older LLaVA packages try to register 'llava' which conflicts with new transformers
+        orig_register_config = transformers.AutoConfig.register
+        orig_register_model = transformers.AutoModelForCausalLM.register
+
+        def patched_register_config(cls, model_type, config_class, **kwargs):
+            kwargs['exist_ok'] = True
+            return orig_register_config.__func__(cls, model_type, config_class, **kwargs)
+
+        def patched_register_model(cls, config_class, model_class, **kwargs):
+            kwargs['exist_ok'] = True
+            return orig_register_model.__func__(cls, config_class, model_class, **kwargs)
+
+        with patch.object(transformers.AutoConfig, 'register', classmethod(patched_register_config)), \
+             patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)):
+            
+            from llava.model.builder import load_pretrained_model
+            from llava.mm_utils import get_model_name_from_path
+            from llava.model.multimodal_encoder.clip_encoder import CLIPVisionTower
+
+            def patched_build_vision_tower(vision_tower_cfg, **kwargs):
+                vision_tower = getattr(vision_tower_cfg, 'mm_vision_tower', getattr(vision_tower_cfg, 'vision_tower', None))
+                if vision_tower and "stllava-med" in vision_tower.lower():
+                    return CLIPVisionTower(vision_tower, args=vision_tower_cfg, **kwargs)
+                raise ValueError(f'Unknown vision tower: {vision_tower}')
 
         model_name = get_model_name_from_path(self.config.model_path)
 
