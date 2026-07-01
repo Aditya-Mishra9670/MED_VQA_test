@@ -41,6 +41,13 @@ def setup_colab():
     print("\nInstalling ngrok for tunneling...")
     run_cmd(f"{sys.executable} -m pip install -q pyngrok")
 
+    print("\nInstalling optional localization dependencies (GroundingDINO & SAM2)...")
+    try:
+        run_cmd(f"{sys.executable} -m pip install -q git+https://github.com/IDEA-Research/GroundingDINO.git")
+        run_cmd(f"{sys.executable} -m pip install -q git+https://github.com/facebookresearch/sam2.git")
+    except Exception as e:
+        print(f"WARNING: Localization auto-install failed: {e}")
+
     print("\nRunning startup checks...")
     try:
         from backend.utils.startup import run_startup_checks
@@ -48,12 +55,12 @@ def setup_colab():
     except Exception as e:
         print(f"Startup checks encountered issues: {e}")
 
-    print("\nPre-downloading models...")
+    print("\nPre-downloading all models (STLLaVA, Base, GroundingDINO, SAM2)...")
     try:
         from backend.models.model_manager import ModelManager
         manager = ModelManager()
-        manager.ensure_stllava_available()
-        print("STLLaVA-Med model ready.")
+        manager.download_models(include_localization=True)
+        print("All models ready.")
     except Exception as e:
         print(f"Model pre-download skipped: {e}")
 

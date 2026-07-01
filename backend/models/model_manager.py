@@ -111,8 +111,9 @@ class ModelManager:
         # 1. Ensure LLaVA package is available
         self.ensure_llava_package()
 
-        # 2. Download STLLaVA-Med weights
+        # 2. Download STLLaVA-Med and Base weights
         self.ensure_stllava_available()
+        self.ensure_llava_base_available()
 
         # 3. Optional: localization models
         if include_localization:
