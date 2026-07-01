@@ -54,3 +54,18 @@ def apply_transformers_patches():
                 setattr(module, '_make_causal_mask', _make_causal_mask)
         except Exception:
             pass
+
+    # Patch DynamicCache to be subscriptable for older LLaVA code
+    # Older code expects past_key_values to be a tuple: past_key_values[-1][-1]
+    try:
+        from transformers.cache_utils import DynamicCache
+        if not hasattr(DynamicCache, '__getitem__'):
+            def dynamic_cache_getitem(self, idx):
+                return (self.key_cache[idx], self.value_cache[idx])
+            DynamicCache.__getitem__ = dynamic_cache_getitem
+        if not hasattr(DynamicCache, '__len__'):
+            def dynamic_cache_len(self):
+                return len(self.key_cache)
+            DynamicCache.__len__ = dynamic_cache_len
+    except Exception:
+        pass
