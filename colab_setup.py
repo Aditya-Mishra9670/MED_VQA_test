@@ -1,0 +1,72 @@
+"""
+Enhanced setup script for Medical VQA on Google Colab.
+Installs all dependencies and bootstraps the system.
+
+Usage in Colab:
+    !python colab_setup.py
+"""
+import subprocess
+import sys
+
+
+def run_cmd(cmd):
+    print(f"\n>>> {cmd}")
+    subprocess.run(cmd, shell=True, check=True)
+
+
+def setup_colab():
+    print("===== Medical VQA Colab Setup =====")
+
+    # Verify GPU
+    try:
+        run_cmd("nvidia-smi")
+    except Exception:
+        print("WARNING: No GPU detected. Inference will be slow.")
+
+    print("\nInstalling core requirements...")
+    run_cmd(f"{sys.executable} -m pip install -q -r requirements.txt")
+
+    print("\nInstalling quantization support...")
+    run_cmd(f"{sys.executable} -m pip install -q bitsandbytes")
+
+    print("\nInstalling LLaVA package...")
+    try:
+        run_cmd(
+            f"{sys.executable} -m pip install -q --no-deps "
+            "git+https://github.com/haotian-liu/LLaVA.git"
+        )
+    except Exception:
+        print("WARNING: LLaVA auto-install failed. Will use fallback loader.")
+
+    print("\nInstalling ngrok for tunneling...")
+    run_cmd(f"{sys.executable} -m pip install -q pyngrok")
+
+    print("\nRunning startup checks...")
+    try:
+        from backend.utils.startup import run_startup_checks
+        run_startup_checks()
+    except Exception as e:
+        print(f"Startup checks encountered issues: {e}")
+
+    print("\nPre-downloading models...")
+    try:
+        from backend.models.model_manager import ModelManager
+        manager = ModelManager()
+        manager.ensure_stllava_available()
+        print("STLLaVA-Med model ready.")
+    except Exception as e:
+        print(f"Model pre-download skipped: {e}")
+
+    print("\n===== Setup Complete =====")
+    print("\nTo start the server, run:")
+    print("  python backend/api/server.py")
+    print("\nOr with ngrok tunnel:")
+    print("  from pyngrok import ngrok")
+    print("  ngrok.set_auth_token('YOUR_TOKEN')")
+    print("  url = ngrok.connect(8000)")
+    print("  print(f'Public URL: {url}')")
+    print("  !python backend/api/server.py")
+
+
+if __name__ == "__main__":
+    setup_colab()

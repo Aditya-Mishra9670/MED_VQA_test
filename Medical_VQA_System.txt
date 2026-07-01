@@ -1,0 +1,191 @@
+Research Document: Medical Visual Question Answering System using STLLaVA-Med + Explainability + Localization
+1. System Objective
+Build a Medical Visual Question Answering (Med-VQA) platform capable of:
+Understanding medical images
+Answering clinical questions
+Explaining why the answer was generated
+Showing visual evidence
+Optionally highlighting lesion boundaries
+Example:
+Input:
+Chest X-Ray
+Question: “Where is the pneumonia?”
+Output:
+Text Answer
+Attention Heatmap
+Visual Explanation
+Optional Lesion Mask
+
+2. High-Level Architecture
+Frontend ↓ FastAPI ↓ STLLaVA-Med ↓ Medical Answer
+↓ Grad-CAM ↓ Attention Heatmap
+(Optional) ↓ Grounding DINO ↓ SAM2 ↓ Lesion Mask
+
+3. Why This Architecture Is Better Than A Single Model
+A single model rarely excels simultaneously at:
+Medical reasoning
+Explainability
+Precise localization
+Therefore we split responsibilities:
+STLLaVA-Med → Medical reasoning
+Grad-CAM → Explainability
+Grounding DINO → Region proposal
+SAM2 → Precise segmentation
+This follows the principle:
+“One component, one responsibility.”
+Benefits:
+Easier maintenance
+Easier debugging
+Independent upgrades
+Better accuracy
+
+4. Component 1: STLLaVA-Med
+Purpose:
+Medical Visual Question Answering.
+Input:
+Image + Question
+Output:
+Medical Answer
+Example:
+Image: Chest X-Ray
+Question: “What abnormality is visible?”
+Output: “Right lower lobe pneumonia.”
+
+Internal Architecture
+Image ↓ Vision Encoder ↓ Image Projector ↓ LLM ↓ Answer
+Main modules:
+Vision Encoder
+Projector
+Language Model
+Self-Questioning Layer
+DPO-Aligned Reasoning
+
+Why STLLaVA-Med
+Advantages:
+Built specifically for medical VQA
+Requires much less medical data than LLaVA-Med
+Uses DPO preference alignment
+Better reasoning quality
+Better open-ended medical answers
+According to the paper, STLLaVA-Med achieves competitive performance while using roughly 9% of the medical training data compared with larger medical VLM pipelines.
+
+Component 2: Grad-CAM Service
+Purpose:
+Generate visual evidence.
+Question:
+Which image region influenced the answer?
+Grad-CAM answers this.
+
+Example
+Question:
+“Where is the fracture?”
+Answer:
+“There is a fracture in the distal radius.”
+Grad-CAM:
+Highlights distal radius region.
+
+Why Grad-CAM
+Advantages:
+Model explainability
+Lightweight
+No retraining
+Works with ViTs and CNNs
+Medical community widely accepts heatmaps
+
+Expected Output
+answer.png
+heatmap.png
+overlay.png
+
+Component 3: Grounding DINO
+Purpose:
+Convert language into image localization.
+Input:
+Question: “Locate the tumor”
+Text Prompt: “Tumor”
+Output:
+Bounding Box
+Example:
+x=220 y=110 w=70 h=80
+
+Why Grounding DINO
+STLLaVA-Med can answer:
+“There is a tumor.”
+But cannot provide:
+“Exact coordinates.”
+Grounding DINO solves localization.
+
+Component 4: SAM2
+Purpose:
+Convert coarse localization into precise mask.
+Input:
+Bounding Box
+Output:
+Pixel-level segmentation
+Example:
+Grounding DINO: Tumor Box
+SAM2: Exact Tumor Boundary
+
+Why SAM2
+Advantages:
+State-of-the-art segmentation
+Pixel-level precision
+Fast inference
+Excellent mask quality
+
+End-to-End Flow
+User Uploads Image ↓ Frontend ↓ FastAPI ↓ STLLaVA-Med ↓ Medical Answer ↓ Grad-CAM ↓ Heatmap
+If localization requested: ↓ Grounding DINO ↓ SAM2 ↓ Mask
+Return Results
+
+API Design
+POST /predict
+Request
+{ “image”: “…”, “question”: “Where is the tumor?” }
+Response
+{ “answer”: “Tumor located in upper lobe”, “heatmap”: “/heatmaps/1.png”, “mask”: “/masks/1.png” }
+
+Repository Structure
+backend/
+├── api/ │ └── server.py
+├── models/ │ ├── stllava.py │ ├── loader.py │ └── inference.py
+├── explainability/ │ ├── gradcam.py │ └── attention.py
+├── localization/ │ ├── grounding_dino.py │ └── sam2.py
+├── outputs/ │ ├── answers/ │ ├── heatmaps/ │ └── masks/
+├── predict.py
+└── requirements.txt
+
+Recommended Implementation Order
+Phase 1 STLLaVA-Med Inference
+Phase 2 predict.py
+Phase 3 FastAPI
+Phase 4 Grad-CAM
+Phase 5 Attention Rollout
+Phase 6 Grounding DINO
+Phase 7 SAM2
+Phase 8 Caching
+Phase 9 Quantization
+Phase 10 Production Deployment
+
+Open Source Resources
+STLLaVA-Med https://github.com/heliossun/STLLaVA-Med
+LLaVA https://github.com/haotian-liu/LLaVA
+Grad-CAM https://github.com/jacobgil/pytorch-grad-cam
+Grounding DINO https://github.com/IDEA-Research/GroundingDINO
+SAM2 https://github.com/facebookresearch/sam2
+FastAPI https://github.com/fastapi/fastapi
+Transformers https://github.com/huggingface/transformers
+PyTorch https://github.com/pytorch/pytorch
+OpenCV https://github.com/opencv/opencv
+
+Final Production Outcome
+Input: Medical Image + Question
+Outputs:
+Medical Answer
+Confidence Score
+Attention Heatmap
+Grad-CAM Visualization
+Lesion Bounding Box (Optional)
+Segmentation Mask (Optional)
+Explainability Metadata
+This architecture maximizes reasoning quality, interpretability, and clinical usability while keeping each component modular and independently upgradeable.

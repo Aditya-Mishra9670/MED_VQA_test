@@ -1,0 +1,53 @@
+# ============================================
+# Medical VQA System — Backend Requirements
+# ============================================
+# NOTE: Use the root requirements.txt instead.
+# This file kept for backward compatibility.
+# Install: pip install -r requirements.txt (from project root)
+
+# Core ML
+torch>=2.1.0
+torchvision>=0.16.0
+transformers>=4.37.0
+accelerate>=0.25.0
+safetensors>=0.4.0
+
+# STLLaVA-Med / LLaVA Dependencies
+sentencepiece>=0.1.99
+einops>=0.7.0
+timm>=0.9.0
+peft>=0.7.0
+protobuf>=4.25.0
+
+# Model Downloads
+huggingface_hub>=0.20.0
+requests>=2.31.0
+
+# API
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Explainability
+grad-cam>=1.5.0
+
+# Image Processing
+opencv-python-headless>=4.9.0
+Pillow>=10.2.0
+numpy>=1.24.0
+matplotlib>=3.8.0
+
+# Utilities
+loguru>=0.7.0
+python-dotenv>=1.0.0
+httpx>=0.26.0
+psutil>=5.9.0
+
+# Quantization (optional, GPU only)
+# bitsandbytes>=0.43.0
+
+# Localization (optional, install from source)
+# groundingdino
+# sam2

@@ -1,0 +1,48 @@
+# Medical VQA - Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Model weights (large files — download separately)
+*.bin
+*.pt
+*.pth
+*.safetensors
+*.gguf
+checkpoints/
+model_weights/
+
+# Outputs (generated at runtime)
+backend/outputs/answers/*.json
+backend/outputs/heatmaps/*.png
+backend/outputs/masks/*.png
+!backend/outputs/**/.gitkeep
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Jupyter
+.ipynb_checkpoints/

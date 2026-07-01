@@ -1,0 +1,60 @@
+# ============================================
+# Medical VQA System — Docker Compose
+# ============================================
+# Run: docker compose up
+# Stop: docker compose down
+
+services:
+  medical-vqa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: medical-vqa-backend
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - DEVICE=${DEVICE:-auto}
+      - MAX_NEW_TOKENS=${MAX_NEW_TOKENS:-512}
+      - TEMPERATURE=${TEMPERATURE:-0.2}
+      - LOAD_IN_4BIT=${LOAD_IN_4BIT:-false}
+      - LOAD_IN_8BIT=${LOAD_IN_8BIT:-false}
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - CORS_ORIGINS=${CORS_ORIGINS:-["*"]}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - AUTO_DOWNLOAD_MODELS=true
+      - MODEL_CACHE_DIR=/app/model_cache
+      - OUTPUT_DIR=/app/backend/outputs
+    volumes:
+      # Persist model cache between restarts
+      - model_cache:/app/model_cache
+      # Persist HuggingFace cache
+      - hf_cache:/root/.cache/huggingface
+      # Persist checkpoints
+      - checkpoints:/app/checkpoints
+      # Persist outputs
+      - outputs:/app/backend/outputs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 180s
+
+volumes:
+  model_cache:
+    driver: local
+  hf_cache:
+    driver: local
+  checkpoints:
+    driver: local
+  outputs:
+    driver: local
