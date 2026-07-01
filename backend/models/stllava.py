@@ -103,11 +103,11 @@ class STLLaVAMed:
 
         def patched_register_config(cls, model_type, config_class, **kwargs):
             kwargs['exist_ok'] = True
-            return orig_register_config.__func__(cls, model_type, config_class, **kwargs)
+            return orig_register_config(model_type, config_class, **kwargs)
 
         def patched_register_model(cls, config_class, model_class, **kwargs):
             kwargs['exist_ok'] = True
-            return orig_register_model.__func__(cls, config_class, model_class, **kwargs)
+            return orig_register_model(config_class, model_class, **kwargs)
 
         with patch.object(transformers.AutoConfig, 'register', classmethod(patched_register_config)), \
              patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)):
