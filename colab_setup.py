@@ -43,19 +43,17 @@ def setup_colab():
 
     print("\nInstalling optional localization dependencies...")
 
-    # GroundingDINO requires CUDA compilation env vars on Colab
-    import os
-    os.environ["BUILD_WITH_CUDA"] = "True"
-    os.environ["CUDA_HOME"] = "/usr/local/cuda"
-
     # Install GroundingDINO
     print("\n[1/2] Installing GroundingDINO...")
     try:
-        # Install build deps first
         run_cmd(f"{sys.executable} -m pip install -q setuptools wheel")
+        # Clone and build with CUDA env vars set at the shell level
         run_cmd(
-            f"{sys.executable} -m pip install -q "
-            "git+https://github.com/IDEA-Research/GroundingDINO.git"
+            "cd /tmp && rm -rf GroundingDINO && "
+            "git clone --quiet https://github.com/IDEA-Research/GroundingDINO.git && "
+            "cd GroundingDINO && "
+            "BUILD_WITH_CUDA=True CUDA_HOME=/usr/local/cuda "
+            f"{sys.executable} -m pip install -q -e ."
         )
         print("GroundingDINO installed successfully.")
     except Exception:
@@ -64,7 +62,7 @@ def setup_colab():
             run_cmd(f"{sys.executable} -m pip install -q groundingdino-py")
             print("GroundingDINO installed from PyPI.")
         except Exception:
-            print("WARNING: GroundingDINO installation failed entirely. Localization will be unavailable.")
+            print("WARNING: GroundingDINO installation failed. Localization will be unavailable.")
 
     # Install SAM2
     print("\n[2/2] Installing SAM2...")
