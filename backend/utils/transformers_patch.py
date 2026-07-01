@@ -30,20 +30,27 @@ def apply_transformers_patches():
     Older forks of LLaVA import internal methods from transformers which were 
     deleted in >=4.37.0. We inject them dynamically to prevent crashes.
     """
-    try:
-        import transformers.models.bloom.modeling_bloom as bloom
-        if not hasattr(bloom, '_expand_mask'):
-            bloom._expand_mask = _expand_mask
-        if not hasattr(bloom, '_make_causal_mask'):
-            bloom._make_causal_mask = _make_causal_mask
-    except Exception:
-        pass
-        
-    try:
-        import transformers.models.llama.modeling_llama as llama
-        if not hasattr(llama, '_expand_mask'):
-            llama._expand_mask = _expand_mask
-        if not hasattr(llama, '_make_causal_mask'):
-            llama._make_causal_mask = _make_causal_mask
-    except Exception:
-        pass
+    import sys
+    
+    # List of all transformer modeling files that older LLaVA forks might import from
+    target_modules = [
+        "transformers.models.bloom.modeling_bloom",
+        "transformers.models.llama.modeling_llama",
+        "transformers.models.opt.modeling_opt",
+        "transformers.models.gpt_neox.modeling_gpt_neox",
+        "transformers.models.gptj.modeling_gptj",
+    ]
+    
+    for module_name in target_modules:
+        try:
+            # Try to import the module
+            import importlib
+            module = importlib.import_module(module_name)
+            
+            # Inject missing functions if they don't exist
+            if not hasattr(module, '_expand_mask'):
+                setattr(module, '_expand_mask', _expand_mask)
+            if not hasattr(module, '_make_causal_mask'):
+                setattr(module, '_make_causal_mask', _make_causal_mask)
+        except Exception:
+            pass
