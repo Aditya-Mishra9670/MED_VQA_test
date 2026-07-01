@@ -41,12 +41,38 @@ def setup_colab():
     print("\nInstalling ngrok for tunneling...")
     run_cmd(f"{sys.executable} -m pip install -q pyngrok")
 
-    print("\nInstalling optional localization dependencies (GroundingDINO & SAM2)...")
+    print("\nInstalling optional localization dependencies...")
+
+    # GroundingDINO requires CUDA compilation env vars on Colab
+    import os
+    os.environ["BUILD_WITH_CUDA"] = "True"
+    os.environ["CUDA_HOME"] = "/usr/local/cuda"
+
+    # Install GroundingDINO
+    print("\n[1/2] Installing GroundingDINO...")
     try:
-        run_cmd(f"{sys.executable} -m pip install -q git+https://github.com/IDEA-Research/GroundingDINO.git")
+        # Install build deps first
+        run_cmd(f"{sys.executable} -m pip install -q setuptools wheel")
+        run_cmd(
+            f"{sys.executable} -m pip install -q "
+            "git+https://github.com/IDEA-Research/GroundingDINO.git"
+        )
+        print("GroundingDINO installed successfully.")
+    except Exception:
+        print("WARNING: GroundingDINO source build failed. Trying PyPI fallback...")
+        try:
+            run_cmd(f"{sys.executable} -m pip install -q groundingdino-py")
+            print("GroundingDINO installed from PyPI.")
+        except Exception:
+            print("WARNING: GroundingDINO installation failed entirely. Localization will be unavailable.")
+
+    # Install SAM2
+    print("\n[2/2] Installing SAM2...")
+    try:
         run_cmd(f"{sys.executable} -m pip install -q git+https://github.com/facebookresearch/sam2.git")
+        print("SAM2 installed successfully.")
     except Exception as e:
-        print(f"WARNING: Localization auto-install failed: {e}")
+        print(f"WARNING: SAM2 installation failed: {e}. Segmentation will be unavailable.")
 
     print("\nRunning startup checks...")
     try:
