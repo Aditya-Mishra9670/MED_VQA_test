@@ -141,7 +141,7 @@ class STLLaVAMed:
             self.tokenizer, self.model, self.image_processor, self.context_len = (
                 load_pretrained_model(
                     model_path=self.config.model_path,
-                    model_base=self.config.model_base,
+                    model_base=None,
                     model_name=model_name,
                     load_8bit=self.config.load_in_8bit,
                     load_4bit=self.config.load_in_4bit,
