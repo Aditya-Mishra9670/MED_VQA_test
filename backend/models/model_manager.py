@@ -367,6 +367,10 @@ class ModelManager:
                 kwargs['exist_ok'] = True
                 return orig_register_model(config_class, model_class, **kwargs)
 
+            # Apply robust backward compatibility patches for deleted transformers functions
+            from backend.utils.transformers_patch import apply_transformers_patches
+            apply_transformers_patches()
+
             with patch.object(transformers.AutoConfig, 'register', classmethod(patched_register_config)), \
                  patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)):
                 import llava  # noqa: F401
