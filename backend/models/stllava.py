@@ -182,14 +182,18 @@ class STLLaVAMed:
             image, return_tensors="pt"
         )["pixel_values"]
 
-        # Determine dtype based on device
+        # Determine dtype based on device and model precision
         device = self.config.device
-        if device == "cpu":
-            image_tensor = image_tensor.float()
+        if hasattr(self, "model") and hasattr(self.model, "dtype"):
+            image_tensor = image_tensor.to(dtype=self.model.dtype, device=device)
         else:
-            image_tensor = image_tensor.half()
+            if device == "cpu":
+                image_tensor = image_tensor.float()
+            else:
+                image_tensor = image_tensor.half()
+            image_tensor = image_tensor.to(device)
 
-        return image_tensor.to(device)
+        return image_tensor
 
     def format_prompt(self, question: str) -> str:
         """
@@ -258,7 +262,8 @@ class STLLaVAMed:
         # Format and tokenize prompt
         prompt = self.format_prompt(question)
 
-        return self._generate_llava(prompt, image_tensor, max_tokens, temp)
+        # Newer LLaVA versions require image_sizes for any_res support
+        return self._generate_llava(prompt, image_tensor, max_tokens, temp, image_sizes=[image.size])
 
     def _generate_llava(
         self,
@@ -266,6 +271,7 @@ class STLLaVAMed:
         image_tensor: torch.Tensor,
         max_tokens: int,
         temp: float,
+        image_sizes: Optional[list] = None,
     ) -> str:
         """Generate using the LLaVA package."""
         from llava.constants import IMAGE_TOKEN_INDEX
@@ -276,15 +282,21 @@ class STLLaVAMed:
         ).unsqueeze(0).to(self.config.device)
 
         with torch.inference_mode():
+            kwargs = {
+                "images": image_tensor,
+                "do_sample": temp > 0,
+                "temperature": temp if temp > 0 else 1.0,
+                "top_p": self.config.top_p,
+                "num_beams": self.config.num_beams,
+                "max_new_tokens": max_tokens,
+                "use_cache": True,
+            }
+            if image_sizes is not None:
+                kwargs["image_sizes"] = image_sizes
+                
             output_ids = self.model.generate(
                 input_ids,
-                images=image_tensor,
-                do_sample=temp > 0,
-                temperature=temp if temp > 0 else 1.0,
-                top_p=self.config.top_p,
-                num_beams=self.config.num_beams,
-                max_new_tokens=max_tokens,
-                use_cache=True,
+                **kwargs
             )
 
         # Decode output (skip input tokens)
