@@ -29,14 +29,14 @@ def setup_colab():
     print("\nInstalling quantization support...")
     run_cmd(f"{sys.executable} -m pip install -q bitsandbytes")
 
-    print("\nInstalling LLaVA package...")
+    print("\nInstalling STLLaVA-Med LLaVA fork...")
     try:
         run_cmd(
             f"{sys.executable} -m pip install -q --no-deps "
-            "git+https://github.com/haotian-liu/LLaVA.git"
+            "git+https://github.com/heliossun/STLLaVA-Med.git"
         )
     except Exception:
-        print("WARNING: LLaVA auto-install failed. Will use fallback loader.")
+        print("WARNING: STLLaVA auto-install failed.")
 
     print("\nInstalling ngrok for tunneling...")
     run_cmd(f"{sys.executable} -m pip install -q pyngrok")

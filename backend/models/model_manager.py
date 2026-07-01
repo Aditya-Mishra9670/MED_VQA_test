@@ -225,7 +225,6 @@ class ModelManager:
         # Try installing from the STLLaVA-Med repo
         install_sources = [
             "git+https://github.com/heliossun/STLLaVA-Med.git",
-            "git+https://github.com/haotian-liu/LLaVA.git",
         ]
 
         for source in install_sources:
@@ -255,9 +254,8 @@ class ModelManager:
 
         logger.warning(
             "Could not auto-install LLaVA package. "
-            "The system will use a built-in fallback loader. "
             "For best results, install manually: "
-            "pip install git+https://github.com/haotian-liu/LLaVA.git"
+            "pip install git+https://github.com/heliossun/STLLaVA-Med.git"
         )
         return False
 
