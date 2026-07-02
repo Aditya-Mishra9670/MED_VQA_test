@@ -1,0 +1,411 @@
+
+============================================================
+  Medical VQA System
+  Starting on http://0.0.0.0:8000
+  Device: cuda
+  Docs: http://localhost:8000/docs
+============================================================
+
+INFO:     Started server process [4091]
+INFO:     Waiting for application startup.
+2026-07-02 08:59:42 | INFO     | backend.utils.logger:setup_logger:73 | Logger initialized — level=INFO
+2026-07-02 08:59:42 | INFO     | backend.api.server:lifespan:53 | ============================================================
+2026-07-02 08:59:42 | INFO     | backend.api.server:lifespan:54 | Medical VQA System — Starting up
+2026-07-02 08:59:42 | INFO     | backend.api.server:lifespan:55 | Device: cuda
+2026-07-02 08:59:42 | INFO     | backend.api.server:lifespan:56 | Output dir: /content/MED_VQA_test/backend/outputs
+2026-07-02 08:59:42 | INFO     | backend.api.server:lifespan:57 | Model cache: /content/MED_VQA_test/model_cache
+2026-07-02 08:59:42 | INFO     | backend.api.server:lifespan:58 | Auto-download: True
+2026-07-02 08:59:42 | INFO     | backend.api.server:lifespan:59 | ============================================================
+2026-07-02 08:59:49 | WARNING  | backend.api.server:lifespan:66 | Startup checks encountered issues: 'torch._C._CudaDeviceProperties' object has no attribute 'total_mem'
+2026-07-02 08:59:49 | INFO     | backend.models.model_manager:ensure_stllava_available:180 | Ensuring STLLaVA-Med model 'ZachSun/stllava-med-7b' is available...
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/utils/_validators.py:189: UserWarning: The `resume_download` argument is deprecated and ignored in `snapshot_download`. Downloads always resume whenever possible.
+  warnings.warn(
+Downloading (incomplete total...): 0.00B [00:00, ?B/s]
+Fetching 10 files: 100% 10/10 [00:00<00:00, 22262.76it/s]
+Download complete: : 0.00B [00:00, ?B/s]              2026-07-02 08:59:50 | INFO     | backend.models.model_manager:ensure_stllava_available:183 | STLLaVA-Med available at: /content/MED_VQA_test/model_cache/models--ZachSun--stllava-med-7b/snapshots/2988166fb375014c96b26ab2078dc7afd00785f1
+2026-07-02 08:59:50 | INFO     | backend.api.server:lifespan:79 | Core model availability verified
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+Download complete: : 0.00B [01:10, ?B/s]
+INFO:     115.248.191.25:0 - "OPTIONS /predict HTTP/1.1" 200 OK
+2026-07-02 09:01:01 | INFO     | backend.api.routes:predict:156 | [592434bd] Prediction request: 'Is there evidence of pneumonia?...'
+2026-07-02 09:01:01 | INFO     | backend.api.routes:predict:164 | [592434bd] Image loaded: (987, 1200)
+2026-07-02 09:01:01 | INFO     | backend.predict:run_prediction:79 | [592434bd] Starting prediction pipeline
+2026-07-02 09:01:01 | INFO     | backend.predict:run_prediction:86 | [592434bd] Step 1: Running STLLaVA-Med inference...
+2026-07-02 09:01:01 | INFO     | backend.models.loader:stllava:55 | Initializing STLLaVA-Med model...
+2026-07-02 09:01:01 | INFO     | backend.models.model_manager:ensure_stllava_available:180 | Ensuring STLLaVA-Med model 'ZachSun/stllava-med-7b' is available...
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/utils/_validators.py:189: UserWarning: The `resume_download` argument is deprecated and ignored in `snapshot_download`. Downloads always resume whenever possible.
+  warnings.warn(
+Downloading (incomplete total...): 0.00B [00:00, ?B/s]
+Fetching 10 files: 100% 10/10 [00:00<00:00, 7553.22it/s]
+Download complete: : 0.00B [00:00, ?B/s]              2026-07-02 09:01:01 | INFO     | backend.models.model_manager:ensure_stllava_available:183 | STLLaVA-Med available at: /content/MED_VQA_test/model_cache/models--ZachSun--stllava-med-7b/snapshots/2988166fb375014c96b26ab2078dc7afd00785f1
+2026-07-02 09:01:01 | INFO     | backend.models.stllava:load:74 | Loading STLLaVA-Med from ZachSun/stllava-med-7b (base: liuhaotian/llava-v1.5-7b) on cuda
+Download complete: : 0.00B [00:00, ?B/s]
+2026-07-02 09:01:02 | INFO     | backend.models.model_manager:ensure_llava_package:221 | LLaVA package already installed.
+config.json: 100% 1.23k/1.23k [00:00<00:00, 2.08MB/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+tokenizer_config.json: 100% 749/749 [00:00<00:00, 2.52MB/s]
+tokenizer.model: 100% 500k/500k [00:00<00:00, 625kB/s]
+special_tokens_map.json: 100% 438/438 [00:00<00:00, 3.00MB/s]
+[transformers] You are using a model of type `llama` to instantiate a model of type `llava`. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+model.safetensors.index.json: 100% 73.9k/73.9k [00:00<00:00, 181MB/s]
+Downloading (incomplete total...): 0.00B [00:00, ?B/s]
+Downloading (incomplete total...):  91% 12.8G/14.1G [02:20<00:14, 89.6MB/s]
+Downloading (incomplete total...):  99% 13.9G/14.1G [02:20<00:01, 167MB/s] 
+Fetching 3 files: 100% 3/3 [02:20<00:00, 46.99s/it]
+Download complete: 100% 14.1G/14.1G [02:21<00:00, 100MB/s]
+config.json: 100% 562/562 [00:00<00:00, 1.27MB/s]
+projector type: cluster
+Loading weights: 100% 305/305 [00:54<00:00,  5.58it/s]
+[transformers] LlavaLlamaForCausalLM LOAD REPORT from: ZachSun/stllava-med-7b
+Key                                                                                            | Status     |  | 
+-----------------------------------------------------------------------------------------------+------------+--+-
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.layer_norm2.bias          | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.self_attn.q_proj.weight   | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.self_attn.v_proj.bias     | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.mlp.fc2.bias              | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.self_attn.out_proj.weight | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.mlp.fc1.bias              | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.self_attn.v_proj.weight   | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.self_attn.k_proj.bias     | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.self_attn.k_proj.weight   | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.layer_norm1.weight        | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.self_attn.q_proj.bias     | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.mlp.fc1.weight            | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.layer_norm1.bias          | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.self_attn.out_proj.bias   | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.mlp.fc2.weight            | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.encoder.layers.{0...23}.layer_norm2.weight        | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.embeddings.class_embedding                        | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.pre_layrnorm.bias                                 | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.embeddings.position_embedding.weight              | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.post_layernorm.bias                               | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.pre_layrnorm.weight                               | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.post_layernorm.weight                             | UNEXPECTED |  | 
+model.vision_tower.vision_tower.vision_model.embeddings.patch_embedding.weight                 | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+generation_config.json: 100% 137/137 [00:00<00:00, 676kB/s]
+preprocessor_config.json: 100% 518/518 [00:00<00:00, 2.51MB/s]
+model.safetensors: 100% 607M/607M [00:06<00:00, 96.1MB/s]
+Loading weights: 100% 391/391 [00:00<00:00, 20961.33it/s]
+2026-07-02 09:04:31 | INFO     | backend.models.stllava:_load_via_llava:161 | STLLaVA-Med loaded successfully via LLaVA package. Context length: 2048
+2026-07-02 09:04:31 | ERROR    | backend.api.routes:predict:192 | [592434bd] Unexpected error
+Traceback (most recent call last):
+
+  File "/usr/local/lib/python3.12/dist-packages/llava/model/language_model/llava_llama.py", line 70, in forward
+    input_ids, attention_mask, past_key_values, inputs_embeds, labels, image_features = self.prepare_inputs_labels_for_multimodal(input_ids, attention_mask, past_key_values, labels, images)
+    │          │               │                │              │                        │    │                                    │          │               │                │       └ tensor([[[[ 0.1931, -0.0551, -0.1572,  ...,  0.4558,  1.0840,  1.7988],
+    │          │               │                │              │                        │    │                                    │          │               │                │                   [ 0.4705,  0.2515,  0.1348,  ...,  0.5435, ...
+    │          │               │                │              │                        │    │                                    │          │               │                └ None
+    │          │               │                │              │                        │    │                                    │          │               └ DynamicCache(layers=[DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, Dynami...
+    │          │               │                │              │                        │    │                                    │          └ tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    │          │               │                │              │                        │    │                                    │                     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,...
+    │          │               │                │              │                        │    │                                    └ tensor([[29901]], device='cuda:0')
+    │          │               │                │              │                        │    └ <function LlavaMetaForCausalLM.prepare_inputs_labels_for_multimodal at 0x7832bcf32660>
+    │          │               │                │              │                        └ LlavaLlamaForCausalLM(
+    │          │               │                │              │                            (model): LlavaLlamaModel(
+    │          │               │                │              │                              (embed_tokens): Embedding(32000, 4096, padding_idx=0)
+    │          │               │                │              │                              (layers): Mo...
+    │          │               │                │              └ None
+    │          │               │                └ None
+    │          │               └ DynamicCache(layers=[DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, Dynami...
+    │          └ tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    │                     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,...
+    └ tensor([[29901]], device='cuda:0')
+  File "/usr/local/lib/python3.12/dist-packages/llava/model/llava_arch.py", line 111, in prepare_inputs_labels_for_multimodal
+    attention_mask = torch.ones((attention_mask.shape[0], past_key_values[-1][-1].shape[-2] + 1), dtype=attention_mask.dtype, device=attention_mask.device)
+                     │     │     │              │         │                                             │              │             │              └ <attribute 'device' of 'torch._C.TensorBase' objects>
+                     │     │     │              │         │                                             │              │             └ tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                     │     │     │              │         │                                             │              │                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,...
+                     │     │     │              │         │                                             │              └ <attribute 'dtype' of 'torch._C.TensorBase' objects>
+                     │     │     │              │         │                                             └ tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                     │     │     │              │         │                                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,...
+                     │     │     │              │         └ DynamicCache(layers=[DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, Dynami...
+                     │     │     │              └ <attribute 'shape' of 'torch._C.TensorBase' objects>
+                     │     │     └ tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                     │     │                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,...
+                     │     └ <built-in method ones of type object at 0x7833854e5180>
+                     └ <module 'torch' from '/usr/local/lib/python3.12/dist-packages/torch/__init__.py'>
+
+AttributeError: 'NoneType' object has no attribute 'shape'
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "/content/MED_VQA_test/backend/api/server.py", line 192, in <module>
+    uvicorn.run(
+    │       └ <function run at 0x78331cf0f740>
+    └ <module 'uvicorn' from '/usr/local/lib/python3.12/dist-packages/uvicorn/__init__.py'>
+
+  File "/usr/local/lib/python3.12/dist-packages/uvicorn/main.py", line 620, in run
+    server.run()
+    │      └ <function Server.run at 0x78331cf0fa60>
+    └ <uvicorn.server.Server object at 0x78331cf3bf50>
+  File "/usr/local/lib/python3.12/dist-packages/uvicorn/server.py", line 75, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+           │           │    │             │                      │    │      └ <function Config.get_loop_factory at 0x78331cf0f380>
+           │           │    │             │                      │    └ <uvicorn.config.Config object at 0x783330c0ba70>
+           │           │    │             │                      └ <uvicorn.server.Server object at 0x78331cf3bf50>
+           │           │    │             └ None
+           │           │    └ <function Server.serve at 0x78331cf0fb00>
+           │           └ <uvicorn.server.Server object at 0x78331cf3bf50>
+           └ <function run at 0x78344f93aca0>
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           │      │   └ <coroutine object Server.serve at 0x78331cf5dc40>
+           │      └ <function Runner.run at 0x78344f21a520>
+           └ <asyncio.runners.Runner object at 0x78331cf3bfe0>
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           │    │     │                  └ <Task pending name='Task-1' coro=<Server.serve() running at /usr/local/lib/python3.12/dist-packages/uvicorn/server.py:79> wai...
+           │    │     └ <cyfunction Loop.run_until_complete at 0x78331d337640>
+           │    └ <uvloop.Loop running=True closed=False debug=False>
+           └ <asyncio.runners.Runner object at 0x78331cf3bfe0>
+  File "/usr/local/lib/python3.12/dist-packages/anyio/_core/_tasks.py", line 278, in _run_coro
+    retval = await self._coro
+                   │    └ <member '_coro' of 'TaskHandle' objects>
+                   └ <TaskHandle pending name='starlette.middleware.base.BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.coro' coro=<corou...
+  File "/usr/local/lib/python3.12/dist-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+          │    │   │      │                      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.send_no_error at 0x7832e011ec00>
+          │    │   │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.cors.CORSMiddleware object at 0x783312496c30>
+          └ <starlette.middleware.base.BaseHTTPMiddleware object at 0x783312496c60>
+  File "/usr/local/lib/python3.12/dist-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+          │    │               │      │        │                     └ Headers({'host': 'spongy-greedless-eldercare.ngrok-free.dev', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleW...
+          │    │               │      │        └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.send_no_error at 0x7832e011ec00>
+          │    │               │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │    │               └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <function CORSMiddleware.simple_response at 0x78344e62ff60>
+          └ <starlette.middleware.cors.CORSMiddleware object at 0x783312496c30>
+  File "/usr/local/lib/python3.12/dist-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+          │    │   │      │        └ functools.partial(<bound method CORSMiddleware.send of <starlette.middleware.cors.CORSMiddleware object at 0x783312496c30>>, ...
+          │    │   │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x783312496c00>
+          └ <starlette.middleware.cors.CORSMiddleware object at 0x783312496c30>
+  File "/usr/local/lib/python3.12/dist-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+          │                            │    │    │     │      │        └ functools.partial(<bound method CORSMiddleware.send of <starlette.middleware.cors.CORSMiddleware object at 0x783312496c30>>, ...
+          │                            │    │    │     │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │                            │    │    │     └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    │    └ <starlette.requests.Request object at 0x7832e0138e60>
+          │                            │    └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x783312496840>
+          │                            └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x783312496c00>
+          └ <function wrap_app_handling_exceptions at 0x78344e7c6660>
+  File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x7832e01e5b20>
+          │   │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x783312496840>
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x7832e01e5b20>
+          │    │   │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <fastapi.routing.APIRouter object at 0x78331d947bf0>
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x783312496840>
+  File "/usr/local/lib/python3.12/dist-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x7832e01e5b20>
+          │    │                │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │    │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <bound method APIRouter.app of <fastapi.routing.APIRouter object at 0x78331d947bf0>>
+          └ <fastapi.routing.APIRouter object at 0x78331d947bf0>
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 2531, in app
+    await route.handle(scope, receive, send)
+          │     │      │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x7832e01e5b20>
+          │     │      │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │     │      └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │     └ <function _IncludedRouter.handle at 0x78344e608a40>
+          └ _IncludedRouter(original_router=<fastapi.routing.APIRouter object at 0x783330b39520>, include_context=_RouterIncludeContext(i...
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 1700, in handle
+    await self.original_router.handle(scope, receive, send)
+          │    │               │      │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x7832e01e5b20>
+          │    │               │      │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │    │               │      └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    │               └ <function APIRouter.handle at 0x78344e60a7a0>
+          │    └ <fastapi.routing.APIRouter object at 0x783330b39520>
+          └ _IncludedRouter(original_router=<fastapi.routing.APIRouter object at 0x783330b39520>, include_context=_RouterIncludeContext(i...
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 2586, in handle
+    await included_router._handle_selected(scope, receive, send)
+          │               │                │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x7832e01e5b20>
+          │               │                │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │               │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │               └ <function _IncludedRouter._handle_selected at 0x78344e608ae0>
+          └ _IncludedRouter(original_router=<fastapi.routing.APIRouter object at 0x783330b39520>, include_context=_RouterIncludeContext(i...
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 1720, in _handle_selected
+    await original_route.handle(scope, receive, send)
+          │              │      │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x7832e01e5b20>
+          │              │      │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │              │      └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │              └ <function APIRoute.handle at 0x78344e7eec00>
+          └ APIRoute(path='/predict', name='predict', methods=['POST'])
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 1239, in handle
+    await app(scope, receive, send)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x7832e01e5b20>
+          │   │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <function request_response.<locals>.app at 0x7832e01e5ee0>
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 150, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+          │                            │    │        │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x7832e01e5b20>
+          │                            │    │        │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │                            │    │        └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    └ <starlette.requests.Request object at 0x7832e0139eb0>
+          │                            └ <function request_response.<locals>.app.<locals>.app at 0x7832e01e5f80>
+          └ <function wrap_app_handling_exceptions at 0x78344e7c6660>
+  File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x7832e01e60c0>
+          │   │      └ <function BaseHTTPMiddleware.__call__.<locals>.call_next.<locals>.receive_or_disconnect at 0x7832e011f2e0>
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <function request_response.<locals>.app.<locals>.app at 0x7832e01e5f80>
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 136, in app
+    response = await f(request)
+                     │ └ <starlette.requests.Request object at 0x7832e0139eb0>
+                     └ <function get_request_handler.<locals>.app at 0x7832e01e5d00>
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 690, in app
+    raw_response = await run_endpoint_function(
+                         └ <function run_endpoint_function at 0x78344e7ee160>
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 344, in run_endpoint_function
+    return await dependant.call(**values)
+                 │         │      └ {'question': 'Is there evidence of pneumonia?', 'image': UploadFile(filename='synpic18896.jpg', size=110249, headers=Headers(...
+                 │         └ <function predict at 0x78331d9e1120>
+                 └ Dependant(path_params=[], query_params=[], header_params=[], cookie_params=[], body_params=[ModelField(field_info=Form(Pydant...
+
+> File "/content/MED_VQA_test/backend/api/routes.py", line 170, in predict
+    result = run_prediction(
+             └ <function run_prediction at 0x7832df15bd80>
+
+  File "/content/MED_VQA_test/backend/utils/logger.py", line 88, in wrapper
+    result = func(*args, **kwargs)
+             │     │       └ {'image': <PIL.Image.Image image mode=RGB size=987x1200 at 0x7832E0169460>, 'question': 'Is there evidence of pneumonia?', 'r...
+             │     └ ()
+             └ <function run_prediction at 0x7832df15bce0>
+
+  File "/content/MED_VQA_test/backend/predict.py", line 87, in run_prediction
+    vqa_result = engine.predict(
+                 │      └ <function MedicalVQAInference.predict at 0x7832e1562980>
+                 └ <backend.models.inference.MedicalVQAInference object at 0x7832e250aa20>
+
+  File "/content/MED_VQA_test/backend/utils/logger.py", line 88, in wrapper
+    result = func(*args, **kwargs)
+             │     │       └ {'image': <PIL.Image.Image image mode=RGB size=987x1200 at 0x7832E01695B0>, 'question': 'Is there evidence of pneumonia?', 'm...
+             │     └ (<backend.models.inference.MedicalVQAInference object at 0x7832e250aa20>,)
+             └ <function MedicalVQAInference.predict at 0x7832e15628e0>
+
+  File "/content/MED_VQA_test/backend/models/inference.py", line 103, in predict
+    answer = self._loader.stllava.generate(
+             │    │       └ <property object at 0x78344e3e7100>
+             │    └ <backend.models.loader.ModelLoader object at 0x7832e93ff140>
+             └ <backend.models.inference.MedicalVQAInference object at 0x7832e250aa20>
+
+  File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           │     │       └ {'image': <PIL.Image.Image image mode=RGB size=987x1200 at 0x7832E01695B0>, 'question': 'Is there evidence of pneumonia?', 'm...
+           │     └ (<backend.models.stllava.STLLaVAMed object at 0x7832e1fc5820>,)
+           └ <function STLLaVAMed.generate at 0x7832e1561bc0>
+
+  File "/content/MED_VQA_test/backend/models/stllava.py", line 265, in generate
+    return self._generate_llava(prompt, image_tensor, max_tokens, temp)
+           │    │               │       │             │           └ 0.2
+           │    │               │       │             └ 512
+           │    │               │       └ tensor([[[[ 0.1931, -0.0551, -0.1572,  ...,  0.4558,  1.0840,  1.7988],
+           │    │               │                   [ 0.4705,  0.2515,  0.1348,  ...,  0.5435, ...
+           │    │               └ "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite a...
+           │    └ <function STLLaVAMed._generate_llava at 0x7832e1561d00>
+           └ <backend.models.stllava.STLLaVAMed object at 0x7832e1fc5820>
+
+  File "/content/MED_VQA_test/backend/models/stllava.py", line 283, in _generate_llava
+    output_ids = self.model.generate(
+                 │    │     └ <function GenerationMixin.generate at 0x7832de9d0900>
+                 │    └ LlavaLlamaForCausalLM(
+                 │        (model): LlavaLlamaModel(
+                 │          (embed_tokens): Embedding(32000, 4096, padding_idx=0)
+                 │          (layers): Mo...
+                 └ <backend.models.stllava.STLLaVAMed object at 0x7832e1fc5820>
+
+  File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           │     │       └ {'images': tensor([[[[ 0.1931, -0.0551, -0.1572,  ...,  0.4558,  1.0840,  1.7988],
+           │     │                   [ 0.4705,  0.2515,  0.1348,  ......
+           │     └ (LlavaLlamaForCausalLM(
+           │         (model): LlavaLlamaModel(
+           │           (embed_tokens): Embedding(32000, 4096, padding_idx=0)
+           │           (layers): M...
+           └ <function GenerationMixin.generate at 0x7832de9d09a0>
+  File "/usr/local/lib/python3.12/dist-packages/transformers/generation/utils.py", line 2584, in generate
+    result = decoding_method(
+             └ <function GenerationMixin._sample at 0x7832de9d0b80>
+  File "/usr/local/lib/python3.12/dist-packages/transformers/generation/utils.py", line 2784, in _sample
+    outputs = self._prefill(
+              │    └ <function GenerationMixin._prefill at 0x7832de9d1300>
+              └ LlavaLlamaForCausalLM(
+                  (model): LlavaLlamaModel(
+                    (embed_tokens): Embedding(32000, 4096, padding_idx=0)
+                    (layers): Mo...
+  File "/usr/local/lib/python3.12/dist-packages/transformers/generation/utils.py", line 3830, in _prefill
+    return self(**model_inputs, return_dict=True)
+           │      └ {'input_ids': tensor([[29901]], device='cuda:0'), 'past_key_values': DynamicCache(layers=[DynamicLayer, DynamicLayer, Dynamic...
+           └ LlavaLlamaForCausalLM(
+               (model): LlavaLlamaModel(
+                 (embed_tokens): Embedding(32000, 4096, padding_idx=0)
+                 (layers): Mo...
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           │    │           │       └ {'input_ids': tensor([[29901]], device='cuda:0'), 'past_key_values': DynamicCache(layers=[DynamicLayer, DynamicLayer, Dynamic...
+           │    │           └ ()
+           │    └ <function Module._call_impl at 0x78333228a700>
+           └ LlavaLlamaForCausalLM(
+               (model): LlavaLlamaModel(
+                 (embed_tokens): Embedding(32000, 4096, padding_idx=0)
+                 (layers): Mo...
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           │             │       └ {'input_ids': tensor([[29901]], device='cuda:0'), 'past_key_values': DynamicCache(layers=[DynamicLayer, DynamicLayer, Dynamic...
+           │             └ ()
+           └ <bound method LlavaLlamaForCausalLM.forward of LlavaLlamaForCausalLM(
+               (model): LlavaLlamaModel(
+                 (embed_tokens): Embeddi...
+  File "/usr/local/lib/python3.12/dist-packages/llava/model/language_model/llava_llama.py", line 72, in forward
+    input_ids, attention_mask, past_key_values, inputs_embeds, labels = self.prepare_inputs_labels_for_multimodal(
+    │          │               │                │                       │    └ <function LlavaMetaForCausalLM.prepare_inputs_labels_for_multimodal at 0x7832bcf32660>
+    │          │               │                │                       └ LlavaLlamaForCausalLM(
+    │          │               │                │                           (model): LlavaLlamaModel(
+    │          │               │                │                             (embed_tokens): Embedding(32000, 4096, padding_idx=0)
+    │          │               │                │                             (layers): Mo...
+    │          │               │                └ None
+    │          │               └ DynamicCache(layers=[DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, Dynami...
+    │          └ tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    │                     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,...
+    └ tensor([[29901]], device='cuda:0')
+  File "/usr/local/lib/python3.12/dist-packages/llava/model/llava_arch.py", line 111, in prepare_inputs_labels_for_multimodal
+    attention_mask = torch.ones((attention_mask.shape[0], past_key_values[-1][-1].shape[-2] + 1), dtype=attention_mask.dtype, device=attention_mask.device)
+                     │     │     │              │         │                                             │              │             │              └ <attribute 'device' of 'torch._C.TensorBase' objects>
+                     │     │     │              │         │                                             │              │             └ tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                     │     │     │              │         │                                             │              │                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,...
+                     │     │     │              │         │                                             │              └ <attribute 'dtype' of 'torch._C.TensorBase' objects>
+                     │     │     │              │         │                                             └ tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                     │     │     │              │         │                                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,...
+                     │     │     │              │         └ DynamicCache(layers=[DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, Dynami...
+                     │     │     │              └ <attribute 'shape' of 'torch._C.TensorBase' objects>
+                     │     │     └ tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                     │     │                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,...
+                     │     └ <built-in method ones of type object at 0x7833854e5180>
+                     └ <module 'torch' from '/usr/local/lib/python3.12/dist-packages/torch/__init__.py'>
+
+AttributeError: 'NoneType' object has no attribute 'shape'
+INFO:     115.248.191.25:0 - "POST /predict HTTP/1.1" 500 Internal Server Error
+WARNING:pyngrok.process.ngrok:t=2026-07-02T09:20:27+0000 lvl=warn msg="Stopping forwarder" name=http-8000-cad12bb0-c733-42bf-93f1-7e51a48cdff3 acceptErr="failed to accept connection: Listener closed"
+INFO:     Shutting down
+INFO:     Finished server process [4091]
