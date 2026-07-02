@@ -45,22 +45,56 @@ def setup_colab():
 
     # Install GroundingDINO
     print("\n[1/2] Installing GroundingDINO...")
+    gdino_installed = False
+
+    # Pre-install deps that cause build failures
     try:
-        run_cmd(f"{sys.executable} -m pip install -q setuptools wheel")
-        # Clone and build with CUDA env vars set at the shell level
+        run_cmd(f"{sys.executable} -m pip install -q --upgrade setuptools wheel")
+        run_cmd(f'{sys.executable} -m pip install -q "cython<3.0.0"')
         run_cmd(
-            "cd /tmp && rm -rf GroundingDINO && "
-            "git clone --quiet https://github.com/IDEA-Research/GroundingDINO.git && "
-            "cd GroundingDINO && "
-            "BUILD_WITH_CUDA=True CUDA_HOME=/usr/local/cuda "
-            f"{sys.executable} -m pip install -q -e ."
+            f"{sys.executable} -m pip install -q --no-build-isolation pyyaml"
         )
-        print("GroundingDINO installed successfully.")
     except Exception:
-        print("WARNING: GroundingDINO source build failed. Trying PyPI fallback...")
+        pass  # best-effort
+
+    # Attempt 1: Clone and build (non-editable install — avoids deprecated setup.py develop)
+    if not gdino_installed:
+        try:
+            run_cmd(
+                "cd /tmp && rm -rf GroundingDINO && "
+                "git clone --quiet https://github.com/IDEA-Research/GroundingDINO.git && "
+                "cd GroundingDINO && "
+                "BUILD_WITH_CUDA=True CUDA_HOME=/usr/local/cuda "
+                f"{sys.executable} -m pip install -q --no-build-isolation ."
+            )
+            print("GroundingDINO installed successfully (non-editable).")
+            gdino_installed = True
+        except Exception:
+            print("WARNING: GroundingDINO non-editable build failed.")
+
+    # Attempt 2: Editable install with compat mode
+    if not gdino_installed:
+        try:
+            run_cmd(
+                "cd /tmp && rm -rf GroundingDINO && "
+                "git clone --quiet https://github.com/IDEA-Research/GroundingDINO.git && "
+                "cd GroundingDINO && "
+                "BUILD_WITH_CUDA=True CUDA_HOME=/usr/local/cuda "
+                f'{sys.executable} -m pip install -q --no-build-isolation '
+                '--config-settings editable_mode=compat -e .'
+            )
+            print("GroundingDINO installed successfully (editable-compat).")
+            gdino_installed = True
+        except Exception:
+            print("WARNING: GroundingDINO editable build also failed.")
+
+    # Attempt 3: PyPI pre-built package (no CUDA compile needed)
+    if not gdino_installed:
+        print("Trying PyPI fallback (groundingdino-py)...")
         try:
             run_cmd(f"{sys.executable} -m pip install -q groundingdino-py")
             print("GroundingDINO installed from PyPI.")
+            gdino_installed = True
         except Exception:
             print("WARNING: GroundingDINO installation failed. Localization will be unavailable.")
 
