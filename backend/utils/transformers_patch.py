@@ -57,15 +57,49 @@ def apply_transformers_patches():
 
     # Patch DynamicCache to be subscriptable for older LLaVA code
     # Older code expects past_key_values to be a tuple: past_key_values[-1][-1]
+    # Newer transformers (>=4.46) replaced key_cache/value_cache with a
+    # .layers list of DynamicLayer objects that hold .key and .value tensors.
     try:
         from transformers.cache_utils import DynamicCache
-        if not hasattr(DynamicCache, '__getitem__'):
-            def dynamic_cache_getitem(self, idx):
+
+        def dynamic_cache_getitem(self, idx):
+            # New API: layers attribute with DynamicLayer objects
+            if hasattr(self, '_cache'):
+                layer = self._cache[idx]
+                return (layer.key, layer.value)
+            if hasattr(self, 'layers') and not hasattr(self, 'key_cache'):
+                # Some versions expose .layers directly
+                layer = list(self)[idx] if hasattr(self, '__iter__') else None
+                if layer is not None and hasattr(layer, 'key'):
+                    return (layer.key, layer.value)
+            # Old API: key_cache / value_cache lists
+            if hasattr(self, 'key_cache'):
                 return (self.key_cache[idx], self.value_cache[idx])
-            DynamicCache.__getitem__ = dynamic_cache_getitem
-        if not hasattr(DynamicCache, '__len__'):
-            def dynamic_cache_len(self):
+            # Last resort: iterate through the cache
+            cache_list = list(self)
+            layer = cache_list[idx]
+            if isinstance(layer, tuple):
+                return layer
+            if hasattr(layer, 'key'):
+                return (layer.key, layer.value)
+            raise AttributeError(
+                f"Cannot index DynamicCache: unrecognized internal structure. "
+                f"Attributes: {[a for a in dir(self) if not a.startswith('__')]}"
+            )
+
+        def dynamic_cache_len(self):
+            if hasattr(self, '_cache'):
+                return len(self._cache)
+            if hasattr(self, 'key_cache'):
                 return len(self.key_cache)
-            DynamicCache.__len__ = dynamic_cache_len
+            # Fallback: count layers
+            try:
+                return sum(1 for _ in self)
+            except TypeError:
+                return 0
+
+        # Always override to ensure our robust version is used
+        DynamicCache.__getitem__ = dynamic_cache_getitem
+        DynamicCache.__len__ = dynamic_cache_len
     except Exception:
         pass
