@@ -14,6 +14,7 @@ Model: https://huggingface.co/collections/ZachSun/stllava-med-672464190c1f6b5b54
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 import torch
@@ -128,6 +129,20 @@ class STLLaVAMed:
 
         model_name = get_model_name_from_path(self.config.model_path)
 
+        # The LLaVA builder routes on 'llava' being present in model_name.
+        # Kaggle dataset paths like '/kaggle/.../stllava01' produce model
+        # names that lack 'llava', causing the builder to take the wrong
+        # code path (plain LM instead of LLaVA).  Ensure 'llava' is present.
+        if "llava" not in model_name.lower():
+            model_name = "llava-v1.5-7b"
+
+        # When model_path is a local directory (e.g. on Kaggle), pass
+        # model_base so the builder loads the tokenizer from the base
+        # model instead of trying to find tokenizer files inside model_path.
+        model_base = None
+        if Path(self.config.model_path).is_dir() and self.config.model_base:
+            model_base = self.config.model_base
+
         # Determine device for loading
         device = self.config.device
         if device == "mps":
@@ -141,7 +156,7 @@ class STLLaVAMed:
             self.tokenizer, self.model, self.image_processor, self.context_len = (
                 load_pretrained_model(
                     model_path=self.config.model_path,
-                    model_base=None,
+                    model_base=model_base,
                     model_name=model_name,
                     load_8bit=self.config.load_in_8bit,
                     load_4bit=self.config.load_in_4bit,
