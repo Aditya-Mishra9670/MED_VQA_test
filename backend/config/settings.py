@@ -15,11 +15,56 @@ from typing import Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from dotenv import load_dotenv
 
 # Project root = Project/ directory
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
+# Load environment variables into os.environ for external libraries (like huggingface_hub)
+load_dotenv(PROJECT_ROOT / ".env")
+
+
+def _get_model_cache_dir() -> str:
+    if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
+        base = Path("/kaggle/input")
+        if base.exists():
+            for p in base.rglob("snapshots"):
+                return str(p.parent.parent)
+            for p in base.rglob("model_cache"):
+                return str(p)
+        return "/kaggle/input/model-cache"
+    return str(PROJECT_ROOT / "model_cache")
+
+def _get_checkpoints_dir() -> str:
+    if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
+        base = Path("/kaggle/input")
+        if base.exists():
+            for p in base.rglob("groundingdino_swint_ogc.pth"):
+                return str(p.parent)
+            for p in base.rglob("checkpoints"):
+                return str(p)
+        return "/kaggle/input/checkpoints"
+    return str(PROJECT_ROOT / "checkpoints")
+
+def _get_stllava_path() -> str:
+    if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
+        return "/kaggle/input/notebooks/systemsuperadmin/stllava01"
+    return "ZachSun/stllava-med-7b"
+
+def _get_stllava_base() -> str:
+    if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
+        return "/kaggle/input/notebooks/systemsuperadmin/stllava02"
+    return "liuhaotian/llava-v1.5-7b"
+
+def _get_gdino_ckpt() -> str:
+    if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
+        return "/kaggle/input/notebooks/systemsuperadmin/groundingdino/groundingdino_swint_ogc.pth"
+    return "checkpoints/groundingdino_swint_ogc.pth"
+
+def _get_sam2_ckpt() -> str:
+    if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
+        return "/kaggle/input/notebooks/systemsuperadmin/sam2-model/sam2.1_hiera_large.pt"
+    return "checkpoints/sam2.1_hiera_large.pt"
 
 class Settings(BaseSettings):
     """Application-wide settings with env variable support."""
@@ -32,17 +77,17 @@ class Settings(BaseSettings):
     )
 
     # ---- STLLaVA-Med ----
-    stllava_model_path: str = "ZachSun/stllava-med-7b"
-    stllava_model_base: str = "liuhaotian/llava-v1.5-7b"
+    stllava_model_path: str = _get_stllava_path()
+    stllava_model_base: str = _get_stllava_base()
 
     # ---- Grounding DINO ----
-    grounding_dino_checkpoint: str = "checkpoints/groundingdino_swint_ogc.pth"
+    grounding_dino_checkpoint: str = _get_gdino_ckpt()
     grounding_dino_config: str = (
         "GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
     )
 
     # ---- SAM2 ----
-    sam2_checkpoint: str = "checkpoints/sam2.1_hiera_large.pt"
+    sam2_checkpoint: str = _get_sam2_ckpt()
     sam2_config: str = "configs/sam2.1/sam2.1_hiera_l.yaml"
 
     # ---- Inference ----
@@ -53,11 +98,7 @@ class Settings(BaseSettings):
     load_in_4bit: bool = False
 
     # ---- Model Management ----
-    model_cache_dir: str = (
-        str(Path("/kaggle/input/model_cache")) 
-        if "KAGGLE_KERNEL_RUN_TYPE" in os.environ 
-        else str(PROJECT_ROOT / "model_cache")
-    )
+    model_cache_dir: str = _get_model_cache_dir()
     auto_download_models: bool = True
 
     # ---- API ----
@@ -122,7 +163,7 @@ class Settings(BaseSettings):
             try:
                 import torch
                 if torch.cuda.is_available():
-                    gpu_mem_gb = torch.cuda.get_device_properties(0).total_mem / (1024**3)
+                    gpu_mem_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
                     if gpu_mem_gb < 12:
                         return {"load_in_8bit": False, "load_in_4bit": True, "dtype": "float16"}
                     elif gpu_mem_gb < 24:
@@ -157,7 +198,7 @@ class Settings(BaseSettings):
     @property
     def checkpoints_dir(self) -> Path:
         if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
-            return Path("/kaggle/input/checkpoints")
+            return Path(_get_checkpoints_dir())
         path = PROJECT_ROOT / "checkpoints"
         path.mkdir(parents=True, exist_ok=True)
         return path

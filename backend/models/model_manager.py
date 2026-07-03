@@ -269,7 +269,9 @@ class ModelManager:
         Returns:
             Path to the checkpoint file, or None if unavailable.
         """
-        checkpoint_path = self._checkpoints_dir / "groundingdino_swint_ogc.pth"
+        checkpoint_path = Path(self._settings.grounding_dino_checkpoint)
+        if not checkpoint_path.is_absolute():
+            checkpoint_path = self._checkpoints_dir / checkpoint_path.name
 
         if checkpoint_path.exists() and checkpoint_path.stat().st_size > 1024:
             logger.info(f"Grounding DINO checkpoint found: {checkpoint_path}")
@@ -306,7 +308,9 @@ class ModelManager:
         Returns:
             Path to the checkpoint file, or None if unavailable.
         """
-        checkpoint_path = self._checkpoints_dir / "sam2.1_hiera_large.pt"
+        checkpoint_path = Path(self._settings.sam2_checkpoint)
+        if not checkpoint_path.is_absolute():
+            checkpoint_path = self._checkpoints_dir / checkpoint_path.name
 
         if checkpoint_path.exists() and checkpoint_path.stat().st_size > 1024:
             logger.info(f"SAM2 checkpoint found: {checkpoint_path}")

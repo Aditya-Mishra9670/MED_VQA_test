@@ -122,6 +122,8 @@ def run_prediction(
                 explainer = GradCAMExplainer(
                     model=vision_encoder,
                     use_vit=True,
+                    reshape_height=24,
+                    reshape_width=24,
                 )
 
                 gradcam_result = explainer.explain(
