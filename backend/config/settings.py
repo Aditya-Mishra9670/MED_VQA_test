@@ -8,6 +8,7 @@ Uses pydantic-settings for validation and type coercion.
 from __future__ import annotations
 
 import json
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -52,7 +53,11 @@ class Settings(BaseSettings):
     load_in_4bit: bool = False
 
     # ---- Model Management ----
-    model_cache_dir: str = str(PROJECT_ROOT / "model_cache")
+    model_cache_dir: str = (
+        str(Path("/kaggle/input/model_cache")) 
+        if "KAGGLE_KERNEL_RUN_TYPE" in os.environ 
+        else str(PROJECT_ROOT / "model_cache")
+    )
     auto_download_models: bool = True
 
     # ---- API ----
@@ -151,6 +156,8 @@ class Settings(BaseSettings):
 
     @property
     def checkpoints_dir(self) -> Path:
+        if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
+            return Path("/kaggle/input/checkpoints")
         path = PROJECT_ROOT / "checkpoints"
         path.mkdir(parents=True, exist_ok=True)
         return path

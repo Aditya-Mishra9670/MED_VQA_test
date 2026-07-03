@@ -9,7 +9,7 @@ dist/
 build/
 *.egg-info/
 *.egg
-
+Error.txt
 # Virtual environments
 venv/
 env/
@@ -46,3 +46,4 @@ logs/
 
 # Jupyter
 .ipynb_checkpoints/
+desktop.ini
