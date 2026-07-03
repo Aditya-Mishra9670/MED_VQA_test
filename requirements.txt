@@ -12,6 +12,7 @@ safetensors>=0.4.0
 
 # ---- STLLaVA-Med / LLaVA Dependencies ----
 sentencepiece>=0.1.99
+tiktoken>=0.6.0
 einops>=0.7.0
 timm>=0.9.0
 peft>=0.7.0
