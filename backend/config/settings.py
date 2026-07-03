@@ -26,43 +26,58 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 def _get_model_cache_dir() -> str:
     if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
-        base = Path("/kaggle/input")
-        if base.exists():
-            for p in base.rglob("snapshots"):
-                return str(p.parent.parent)
-            for p in base.rglob("model_cache"):
-                return str(p)
-        return "/kaggle/input/model-cache"
+        return "/kaggle/working/model_cache"
     return str(PROJECT_ROOT / "model_cache")
 
 def _get_checkpoints_dir() -> str:
     if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
-        base = Path("/kaggle/input")
-        if base.exists():
-            for p in base.rglob("groundingdino_swint_ogc.pth"):
-                return str(p.parent)
-            for p in base.rglob("checkpoints"):
-                return str(p)
-        return "/kaggle/input/checkpoints"
+        return "/kaggle/working/checkpoints"
     return str(PROJECT_ROOT / "checkpoints")
+
+def _find_in_kaggle(dataset_name: str, target_file: str) -> str | None:
+    if "KAGGLE_KERNEL_RUN_TYPE" not in os.environ:
+        return None
+    
+    dataset_path = Path(f"/kaggle/input/notebooks/systemsuperadmin/{dataset_name}")
+    if dataset_path.exists():
+        for p in dataset_path.rglob(target_file):
+            return str(p)
+            
+    base = Path("/kaggle/input")
+    if base.exists():
+        for p in base.rglob(target_file):
+            return str(p)
+    return None
 
 def _get_stllava_path() -> str:
     if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
+        found = _find_in_kaggle("stllava01", "config.json")
+        if found:
+            return str(Path(found).parent)
         return "/kaggle/input/notebooks/systemsuperadmin/stllava01"
     return "ZachSun/stllava-med-7b"
 
 def _get_stllava_base() -> str:
     if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
+        found = _find_in_kaggle("stllava02", "config.json")
+        if found:
+            return str(Path(found).parent)
         return "/kaggle/input/notebooks/systemsuperadmin/stllava02"
     return "liuhaotian/llava-v1.5-7b"
 
 def _get_gdino_ckpt() -> str:
     if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
+        found = _find_in_kaggle("groundingdino", "groundingdino_swint_ogc.pth")
+        if found:
+            return found
         return "/kaggle/input/notebooks/systemsuperadmin/groundingdino/groundingdino_swint_ogc.pth"
     return "checkpoints/groundingdino_swint_ogc.pth"
 
 def _get_sam2_ckpt() -> str:
     if "KAGGLE_KERNEL_RUN_TYPE" in os.environ:
+        found = _find_in_kaggle("sam2-model", "sam2.1_hiera_large.pt")
+        if found:
+            return found
         return "/kaggle/input/notebooks/systemsuperadmin/sam2-model/sam2.1_hiera_large.pt"
     return "checkpoints/sam2.1_hiera_large.pt"
 
