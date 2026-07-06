@@ -1,5 +1,39 @@
 import torch
+from contextlib import contextmanager
 from typing import Optional
+
+
+@contextmanager
+def patch_tokenizer_loading():
+    """
+    Context manager that forces AutoTokenizer.from_pretrained to use
+    use_fast=False.
+
+    Newer transformers versions default to use_fast=True and attempt to
+    convert the LLaMA slow tokenizer (sentencepiece-based) into a fast
+    Rust tokenizer.  This conversion fails on many environments (including
+    Kaggle) even when sentencepiece is installed, producing:
+
+        "Couldn't instantiate the backend tokenizer …"
+
+    Loading the *slow* tokenizer directly (use_fast=False) avoids the
+    conversion entirely and works reliably.
+    """
+    from transformers import AutoTokenizer
+
+    _original_from_pretrained = AutoTokenizer.from_pretrained
+
+    @staticmethod
+    def _patched_from_pretrained(*args, **kwargs):
+        kwargs.setdefault("use_fast", False)
+        return _original_from_pretrained(*args, **kwargs)
+
+    AutoTokenizer.from_pretrained = _patched_from_pretrained
+    try:
+        yield
+    finally:
+        AutoTokenizer.from_pretrained = _original_from_pretrained
+
 
 def _make_causal_mask(input_ids_shape: torch.Size, dtype: torch.dtype, device: torch.device, past_key_values_length: int = 0):
     """Fallback implementation for older LLaVA models."""
