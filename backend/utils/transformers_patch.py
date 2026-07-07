@@ -34,6 +34,43 @@ def patch_tokenizer_loading():
     finally:
         AutoTokenizer.from_pretrained = _original_from_pretrained
 
+@contextmanager
+def patch_model_loading_kwargs():
+    """
+    Newer transformers no longer pop load_in_8bit/load_in_4bit from kwargs,
+    causing them to be passed to model __init__ which crashes.
+    This intercepts them and converts them to BitsAndBytesConfig.
+    """
+    from transformers.modeling_utils import PreTrainedModel
+    
+    _orig_from_pretrained = PreTrainedModel.from_pretrained
+
+    @classmethod
+    def _patched_from_pretrained(cls, *args, **kwargs):
+        load_in_8bit = kwargs.pop("load_in_8bit", False)
+        load_in_4bit = kwargs.pop("load_in_4bit", False)
+        
+        if (load_in_8bit or load_in_4bit) and "quantization_config" not in kwargs:
+            try:
+                from transformers import BitsAndBytesConfig
+                kwargs["quantization_config"] = BitsAndBytesConfig(
+                    load_in_8bit=load_in_8bit,
+                    load_in_4bit=load_in_4bit
+                )
+            except ImportError:
+                pass
+
+        # _orig_from_pretrained is a classmethod, so we use __func__ to call it
+        if hasattr(_orig_from_pretrained, "__func__"):
+            return _orig_from_pretrained.__func__(cls, *args, **kwargs)
+        return _orig_from_pretrained(cls, *args, **kwargs)
+
+    PreTrainedModel.from_pretrained = _patched_from_pretrained
+    try:
+        yield
+    finally:
+        PreTrainedModel.from_pretrained = _orig_from_pretrained
+
 
 def _make_causal_mask(input_ids_shape: torch.Size, dtype: torch.dtype, device: torch.device, past_key_values_length: int = 0):
     """Fallback implementation for older LLaVA models."""
