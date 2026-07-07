@@ -38,15 +38,23 @@ def _find_in_kaggle(dataset_name: str, target_file: str) -> str | None:
     if "KAGGLE_KERNEL_RUN_TYPE" not in os.environ:
         return None
     
-    dataset_path = Path(f"/kaggle/input/notebooks/systemsuperadmin/{dataset_name}")
-    if dataset_path.exists():
-        for p in dataset_path.rglob(target_file):
-            return str(p)
-            
     base = Path("/kaggle/input")
-    if base.exists():
-        for p in base.rglob(target_file):
+    if not base.exists():
+        return None
+
+    # Kaggle mounts inputs in /kaggle/input/.
+    # Notebooks used as inputs might be named "STLLava01" or similar.
+    # We search for the target file and check if the dataset_name is in the path.
+    matches = []
+    for p in base.rglob(target_file):
+        if dataset_name.lower() in str(p).lower():
             return str(p)
+        matches.append(p)
+        
+    # Fallback to the first match if any exist
+    if matches:
+        return str(matches[0])
+        
     return None
 
 def _get_stllava_path() -> str:

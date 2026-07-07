@@ -25,7 +25,7 @@ def patch_tokenizer_loading():
 
     @staticmethod
     def _patched_from_pretrained(*args, **kwargs):
-        kwargs.setdefault("use_fast", False)
+        kwargs["use_fast"] = False
         return _original_from_pretrained(*args, **kwargs)
 
     AutoTokenizer.from_pretrained = _patched_from_pretrained
