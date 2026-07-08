@@ -8,42 +8,29 @@ def patch_tokenizer_loading():
     """
     Context manager that forces AutoTokenizer.from_pretrained to use
     use_fast=False.
-
-    Newer transformers versions default to use_fast=True and attempt to
-    convert the LLaMA slow tokenizer (sentencepiece-based) into a fast
-    Rust tokenizer.  This conversion fails on many environments (including
-    Kaggle) even when sentencepiece is installed, producing:
-
-        "Couldn't instantiate the backend tokenizer …"
-
-    Loading the *slow* tokenizer directly (use_fast=False) avoids the
-    conversion entirely and works reliably.
     """
     from transformers import AutoTokenizer
+    from unittest.mock import patch
 
-    _original_from_pretrained = AutoTokenizer.from_pretrained
+    _original_from_pretrained = AutoTokenizer.from_pretrained.__func__
 
-    @staticmethod
-    def _patched_from_pretrained(*args, **kwargs):
+    @classmethod
+    def _patched_from_pretrained(cls, *args, **kwargs):
         kwargs["use_fast"] = False
-        return _original_from_pretrained(*args, **kwargs)
+        return _original_from_pretrained(cls, *args, **kwargs)
 
-    AutoTokenizer.from_pretrained = _patched_from_pretrained
-    try:
+    with patch.object(AutoTokenizer, 'from_pretrained', _patched_from_pretrained):
         yield
-    finally:
-        AutoTokenizer.from_pretrained = _original_from_pretrained
 
 @contextmanager
 def patch_model_loading_kwargs():
     """
-    Newer transformers no longer pop load_in_8bit/load_in_4bit from kwargs,
-    causing them to be passed to model __init__ which crashes.
-    This intercepts them and converts them to BitsAndBytesConfig.
+    Intercepts load_in_8bit/4bit to convert to BitsAndBytesConfig.
     """
     from transformers.modeling_utils import PreTrainedModel
+    from unittest.mock import patch
     
-    _orig_from_pretrained = PreTrainedModel.from_pretrained
+    _orig_from_pretrained = PreTrainedModel.from_pretrained.__func__
 
     @classmethod
     def _patched_from_pretrained(cls, *args, **kwargs):
@@ -64,16 +51,10 @@ def patch_model_loading_kwargs():
             except ImportError:
                 pass
 
-        # _orig_from_pretrained is a classmethod, so we use __func__ to call it
-        if hasattr(_orig_from_pretrained, "__func__"):
-            return _orig_from_pretrained.__func__(cls, *args, **kwargs)
         return _orig_from_pretrained(cls, *args, **kwargs)
 
-    PreTrainedModel.from_pretrained = _patched_from_pretrained
-    try:
+    with patch.object(PreTrainedModel, 'from_pretrained', _patched_from_pretrained):
         yield
-    finally:
-        PreTrainedModel.from_pretrained = _orig_from_pretrained
 
 
 def _make_causal_mask(input_ids_shape: torch.Size, dtype: torch.dtype, device: torch.device, past_key_values_length: int = 0):

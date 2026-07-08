@@ -36,7 +36,7 @@ class STLLaVAConfig:
     num_beams: int = 1
     load_in_8bit: bool = False
     load_in_4bit: bool = False
-    conv_mode: str = "llava_v1"
+    conv_mode: str = "vicuna_v1"
 
 
 class STLLaVAMed:
