@@ -138,8 +138,12 @@ class STLLaVAMed:
         # names that lack 'llava', causing the builder to take the wrong
         # code path (plain LM instead of LLaVA).  Ensure 'llava' is present.
         if "llava" not in model_name.lower():
-            model_name = get_model_name_from_path(self.config.model_path)
-        model_base = self.config.model_base
+            model_name = "llava-v1.5-7b"
+
+        # STLLaVA-Med is a full model containing all safetensors and tokenizer files.
+        # We must NOT pass model_base, otherwise the LLaVA builder treats it as a 
+        # delta/LoRA adapter and crashes when merging quantized 8-bit weights.
+        model_base = None
 
         # Determine device for loading
         device = self.config.device
