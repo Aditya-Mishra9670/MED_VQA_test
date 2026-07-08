@@ -366,6 +366,10 @@ class STLLaVAMed:
             try:
                 tower = self.model.get_vision_tower()
                 if tower is not None:
+                    # Return the underlying HuggingFace model to bypass LLaVA's 
+                    # @torch.no_grad() forward method which breaks Grad-CAM
+                    if hasattr(tower, "vision_tower"):
+                        return tower.vision_tower
                     return tower
             except Exception:
                 pass

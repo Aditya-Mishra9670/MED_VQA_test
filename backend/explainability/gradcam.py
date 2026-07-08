@@ -34,22 +34,24 @@ def _vit_reshape_transform(
     """
     Reshape ViT activations from (B, Tokens, Channels) to (B, C, H, W).
 
-    ViTs produce flat token sequences. Grad-CAM needs spatial maps.
-    We strip the CLS token and reshape the remaining patch tokens
-    into a 2D grid.
-
-    Args:
-        tensor: Activation tensor of shape (B, N+1, C) where N = H*W patches.
-        height: Spatial height of the patch grid.
-        width: Spatial width of the patch grid.
-
-    Returns:
-        Reshaped tensor of shape (B, C, H, W).
+    Dynamically calculates H and W assuming a square grid to support
+    both 14x14 (196 patches) and 24x24 (576 patches) ViTs without crashing.
     """
-    # Remove CLS token (index 0), reshape patches to spatial grid
-    result = tensor[:, 1:, :].reshape(
-        tensor.size(0), height, width, tensor.size(2)
-    )
+    import math
+    
+    # Remove CLS token (index 0)
+    patches = tensor[:, 1:, :]
+    
+    # Dynamically calculate grid size
+    B, N, C = patches.shape
+    H = int(math.sqrt(N))
+    if H * H != N:
+        # Fallback to the provided dimensions if it's not a perfect square
+        H, W = height, width
+    else:
+        W = H
+        
+    result = patches.reshape(B, H, W, C)
     # Rearrange to (B, C, H, W)
     result = result.permute(0, 3, 1, 2)
     return result
