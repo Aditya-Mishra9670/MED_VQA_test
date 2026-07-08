@@ -73,9 +73,35 @@ def main():
                     setattr(module, '_make_causal_mask', _make_causal_mask)
             except Exception:
                 pass
+                
+        # Patch PreTrainedModel to gracefully handle load_in_4bit in newer transformers
+        from transformers.modeling_utils import PreTrainedModel
+        orig_from_pretrained_model = PreTrainedModel.from_pretrained.__func__
+        
+        @classmethod
+        def patched_from_pretrained_model(cls, *args, **kwargs):
+            load_in_8bit = kwargs.pop("load_in_8bit", False)
+            load_in_4bit = kwargs.pop("load_in_4bit", False)
+            
+            if (load_in_8bit or load_in_4bit) and "quantization_config" not in kwargs:
+                try:
+                    from transformers import BitsAndBytesConfig
+                    kwargs["quantization_config"] = BitsAndBytesConfig(
+                        load_in_8bit=load_in_8bit,
+                        load_in_4bit=load_in_4bit,
+                        llm_int8_skip_modules=['mm_projector', 'vision_tower', 'vision_model'],
+                        bnb_4bit_compute_dtype=torch.float16,
+                        bnb_4bit_use_double_quant=True,
+                        bnb_4bit_quant_type="nf4"
+                    )
+                except ImportError:
+                    pass
+
+            return orig_from_pretrained_model(cls, *args, **kwargs)
 
         with patch.object(transformers.AutoConfig, 'register', classmethod(patched_register_config)), \
-             patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)):
+             patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)), \
+             patch.object(PreTrainedModel, 'from_pretrained', patched_from_pretrained_model):
             from llava.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token
             from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
