@@ -187,10 +187,8 @@ class Settings(BaseSettings):
                 import torch
                 if torch.cuda.is_available():
                     gpu_mem_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-                    if gpu_mem_gb < 12:
+                    if gpu_mem_gb < 24:
                         return {"load_in_8bit": False, "load_in_4bit": True, "dtype": "float16"}
-                    elif gpu_mem_gb < 24:
-                        return {"load_in_8bit": True, "load_in_4bit": False, "dtype": "float16"}
             except Exception:
                 pass
 

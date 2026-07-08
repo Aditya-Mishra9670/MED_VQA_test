@@ -52,10 +52,14 @@ def patch_model_loading_kwargs():
         
         if (load_in_8bit or load_in_4bit) and "quantization_config" not in kwargs:
             try:
+                import torch
                 from transformers import BitsAndBytesConfig
                 kwargs["quantization_config"] = BitsAndBytesConfig(
                     load_in_8bit=load_in_8bit,
-                    load_in_4bit=load_in_4bit
+                    load_in_4bit=load_in_4bit,
+                    bnb_4bit_compute_dtype=torch.float16,
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_quant_type="nf4"
                 )
             except ImportError:
                 pass
