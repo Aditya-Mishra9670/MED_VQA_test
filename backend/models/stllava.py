@@ -178,6 +178,26 @@ class STLLaVAMed:
             except Exception:
                 logger.warning("Could not move model to MPS, staying on CPU")
 
+        # FIX: The LLaVA builder instantiates the vision tower AFTER from_pretrained,
+        # which causes the vision tower weights in the safetensors to be discarded.
+        # We manually load them back in to prevent random vision embeddings (garbage text).
+        try:
+            from safetensors.torch import load_file
+            import glob
+            
+            vt_weights_loaded = 0
+            for sf_path in glob.glob(str(Path(self.config.model_path) / "*.safetensors")):
+                state_dict = load_file(sf_path)
+                vt_state_dict = {k: v for k, v in state_dict.items() if "vision_tower" in k}
+                if vt_state_dict:
+                    self.model.load_state_dict(vt_state_dict, strict=False)
+                    vt_weights_loaded += len(vt_state_dict)
+                    
+            if vt_weights_loaded > 0:
+                logger.info(f"Restored {vt_weights_loaded} vision tower weights from safetensors.")
+        except Exception as e:
+            logger.warning(f"Failed to restore vision tower weights: {e}")
+
         self._loaded = True
         logger.info(
             f"STLLaVA-Med loaded successfully via LLaVA package. "
