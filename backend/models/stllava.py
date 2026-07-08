@@ -138,12 +138,8 @@ class STLLaVAMed:
         # names that lack 'llava', causing the builder to take the wrong
         # code path (plain LM instead of LLaVA).  Ensure 'llava' is present.
         if "llava" not in model_name.lower():
-            model_name = "llava-v1.5-7b"
-
-        # STLLaVA-Med is a full model containing all safetensors and tokenizer files.
-        # We must NOT pass model_base, otherwise the LLaVA builder treats it as a 
-        # delta/LoRA adapter and attempts to load a non-existent 'mm_projector.bin'.
-        model_base = None
+            model_name = get_model_name_from_path(self.config.model_path)
+        model_base = self.config.model_base
 
         # Determine device for loading
         device = self.config.device
@@ -180,21 +176,25 @@ class STLLaVAMed:
 
         # FIX: The LLaVA builder instantiates the vision tower AFTER from_pretrained,
         # which causes the vision tower weights in the safetensors to be discarded.
-        # We manually load them back in to prevent random vision embeddings (garbage text).
+        # Furthermore, LLaVA's delta weight application corrupts the 'cluster' projector
+        # by adding the full weights to random weights.
+        # We manually load them both back in to prevent random vision embeddings.
         try:
             from safetensors.torch import load_file
             import glob
             
-            vt_weights_loaded = 0
+            restored = 0
             for sf_path in glob.glob(str(Path(self.config.model_path) / "*.safetensors")):
                 state_dict = load_file(sf_path)
-                vt_state_dict = {k: v for k, v in state_dict.items() if "vision_tower" in k}
-                if vt_state_dict:
-                    self.model.load_state_dict(vt_state_dict, strict=False)
-                    vt_weights_loaded += len(vt_state_dict)
+                
+                # Extract vision tower and mm_projector weights
+                vt_proj_state = {k: v for k, v in state_dict.items() if "vision_tower" in k or "mm_projector" in k}
+                if vt_proj_state:
+                    self.model.load_state_dict(vt_proj_state, strict=False)
+                    restored += len(vt_proj_state)
                     
-            if vt_weights_loaded > 0:
-                logger.info(f"Restored {vt_weights_loaded} vision tower weights from safetensors.")
+            if restored > 0:
+                logger.info(f"Restored {restored} vision tower & projector weights from safetensors.")
         except Exception as e:
             logger.warning(f"Failed to restore vision tower weights: {e}")
 
