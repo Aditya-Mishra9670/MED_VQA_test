@@ -207,10 +207,17 @@ class GradCAMExplainer:
             if target_class is not None:
                 targets = [ClassifierOutputTarget(target_class)]
 
-            grayscale_cam = self._cam(
-                input_tensor=input_tensor,
-                targets=targets,
-            )
+            # Ensure model is in eval mode and gradients are enabled
+            self.model.eval()
+            
+            with torch.enable_grad():
+                # Force gradients on the input tensor for quantized models
+                input_tensor.requires_grad_(True)
+                
+                grayscale_cam = self._cam(
+                    input_tensor=input_tensor,
+                    targets=targets,
+                )
 
             # Return first image in batch
             return grayscale_cam[0]

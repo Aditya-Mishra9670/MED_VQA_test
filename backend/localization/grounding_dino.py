@@ -93,6 +93,26 @@ class GroundingDINOWrapper:
                 f"Run: python -m backend.models.model_manager to download."
             )
 
+        # Ensure config exists (fallback to site-packages or download)
+        config_path_obj = Path(self.config_path)
+        if not config_path_obj.exists():
+            try:
+                import groundingdino
+                import urllib.request
+                gdino_dir = Path(groundingdino.__file__).parent
+                fallback_config = gdino_dir / "config" / Path(self.config_path).name
+                if fallback_config.exists():
+                    self.config_path = str(fallback_config)
+                    logger.info(f"Found config in site-packages: {self.config_path}")
+                else:
+                    fallback_config.parent.mkdir(parents=True, exist_ok=True)
+                    url = f"https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/main/groundingdino/config/{Path(self.config_path).name}"
+                    urllib.request.urlretrieve(url, fallback_config)
+                    self.config_path = str(fallback_config)
+                    logger.info(f"Downloaded GroundingDINO config to: {self.config_path}")
+            except Exception as e:
+                logger.warning(f"Failed to auto-resolve config path: {e}")
+
         logger.info(f"Loading Grounding DINO from {self.checkpoint_path}...")
 
         try:

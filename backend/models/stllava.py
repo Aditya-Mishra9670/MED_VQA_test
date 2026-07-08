@@ -300,9 +300,13 @@ class STLLaVAMed:
             prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt"
         ).unsqueeze(0).to(self.config.device)
 
+        # Explicitly create an attention mask to stabilize generation
+        attention_mask = torch.ones_like(input_ids)
+
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,
+                attention_mask=attention_mask,
                 images=image_tensor,
                 do_sample=temp > 0,
                 temperature=temp if temp > 0 else 1.0,
@@ -310,6 +314,8 @@ class STLLaVAMed:
                 num_beams=self.config.num_beams,
                 max_new_tokens=max_tokens,
                 use_cache=True,
+                pad_token_id=self.tokenizer.pad_token_id if self.tokenizer.pad_token_id is not None else self.tokenizer.eos_token_id,
+                eos_token_id=self.tokenizer.eos_token_id,
             )
 
         # Decode output (skip input tokens)
