@@ -100,6 +100,22 @@ def main():
             return orig_from_pretrained_model(cls, *args, **kwargs)
             
         PreTrainedModel.from_pretrained = patched_from_pretrained_model
+        
+        # Patch STLLaVA's hardcoded vision tower validation which rejects its own 'ZachSun' string
+        try:
+            import llava.model.multimodal_encoder.builder as mm_builder
+            orig_build_vision_tower = mm_builder.build_vision_tower
+            
+            def patched_build_vision_tower(vision_tower_cfg, **kwargs):
+                vision_tower = getattr(vision_tower_cfg, 'mm_vision_tower', getattr(vision_tower_cfg, 'vision_tower', None))
+                if vision_tower and ("ZachSun" in vision_tower or "stllava" in vision_tower.lower()):
+                    from llava.model.multimodal_encoder.clip_encoder import CLIPVisionTower
+                    return CLIPVisionTower(vision_tower, args=vision_tower_cfg, **kwargs)
+                return orig_build_vision_tower(vision_tower_cfg, **kwargs)
+                
+            mm_builder.build_vision_tower = patched_build_vision_tower
+        except ImportError:
+            pass
 
         with patch.object(transformers.AutoConfig, 'register', classmethod(patched_register_config)), \
              patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)):
