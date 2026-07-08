@@ -21,108 +21,40 @@ def main():
     print(" STLLaVA-Med Standalone Inference (T4 GPU)")
     print("=" * 60)
     
-    print("\n[1/4] Importing LLaVA components (with transformers patch)...")
+    import transformers
+    if transformers.__version__ > "4.36.2":
+        raise EnvironmentError(
+            f"Transformers version is {transformers.__version__}. STLLaVA-Med technically requires "
+            f"transformers==4.36.2 to run natively without monkey patches. "
+            f"Please run: !pip install transformers==4.36.2"
+        )
+        
+    print("\n[1/4] Preparing Config and Vision Tower (Technical Fix)...")
+    import json
+    import os
+    config_path = os.path.join(merged_model_path, "config.json")
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            config_data = json.load(f)
+            
+        vision_tower_id = config_data.get("mm_vision_tower", "")
+        # If the vision tower is the remote ZachSun ID, download it to satisfy the absolute path requirement natively
+        if vision_tower_id == "ZachSun/stllava-med-7b-vit":
+            print(f"  -> Detected remote vision tower: {vision_tower_id}. Downloading to local cache to satisfy LLaVA's absolute path requirement natively...")
+            from huggingface_hub import snapshot_download
+            local_vt_path = snapshot_download(repo_id=vision_tower_id, local_dir="/kaggle/working/vision_tower_cache")
+            config_data["mm_vision_tower"] = local_vt_path
+            
+            with open(config_path, "w") as f:
+                json.dump(config_data, f, indent=2)
+            print(f"  -> config.json updated with absolute vision tower path: {local_vt_path}")
+
+    print("\n[2/4] Importing LLaVA components (Native)...")
     try:
-        import transformers
-        from unittest.mock import patch
-        
-        orig_register_config = transformers.AutoConfig.register
-        orig_register_model = transformers.AutoModelForCausalLM.register
-
-        def patched_register_config(cls, model_type, config_class, **kwargs):
-            kwargs['exist_ok'] = True
-            return orig_register_config(model_type, config_class, **kwargs)
-
-        def patched_register_model(cls, config_class, model_class, **kwargs):
-            kwargs['exist_ok'] = True
-            return orig_register_model(config_class, model_class, **kwargs)
-            
-        # Patch missing functions for older LLaVA forks (bloom, llama, etc.)
-        def _make_causal_mask(input_ids_shape, dtype, device, past_key_values_length=0):
-            bsz, tgt_len = input_ids_shape
-            mask = torch.full((tgt_len, tgt_len), torch.finfo(dtype).min, device=device)
-            mask_cond = torch.arange(mask.size(-1), device=device)
-            mask.masked_fill_(mask_cond < (mask_cond + 1).view(mask.size(-1), 1), 0)
-            mask = mask.to(dtype)
-            if past_key_values_length > 0:
-                mask = torch.cat([torch.zeros(tgt_len, past_key_values_length, dtype=dtype, device=device), mask], dim=-1)
-            return mask[None, None, :, :].expand(bsz, 1, tgt_len, tgt_len + past_key_values_length)
-
-        def _expand_mask(mask, dtype, tgt_len=None):
-            bsz, src_len = mask.size()
-            tgt_len = tgt_len if tgt_len is not None else src_len
-            expanded_mask = mask[:, None, None, :].expand(bsz, 1, tgt_len, src_len).to(dtype)
-            inverted_mask = 1.0 - expanded_mask
-            return inverted_mask.masked_fill(inverted_mask.to(torch.bool), torch.finfo(dtype).min)
-
-        target_modules = [
-            "transformers.models.bloom.modeling_bloom",
-            "transformers.models.llama.modeling_llama",
-            "transformers.models.opt.modeling_opt",
-            "transformers.models.gpt_neox.modeling_gpt_neox",
-            "transformers.models.gptj.modeling_gptj",
-        ]
-        
-        import importlib
-        for module_name in target_modules:
-            try:
-                module = importlib.import_module(module_name)
-                if not hasattr(module, '_expand_mask'):
-                    setattr(module, '_expand_mask', _expand_mask)
-                if not hasattr(module, '_make_causal_mask'):
-                    setattr(module, '_make_causal_mask', _make_causal_mask)
-            except Exception:
-                pass
-                
-        # Patch PreTrainedModel to gracefully handle load_in_4bit in newer transformers
-        from transformers.modeling_utils import PreTrainedModel
-        orig_from_pretrained_model = PreTrainedModel.from_pretrained.__func__
-        
-        @classmethod
-        def patched_from_pretrained_model(cls, *args, **kwargs):
-            load_in_8bit = kwargs.pop("load_in_8bit", False)
-            load_in_4bit = kwargs.pop("load_in_4bit", False)
-            
-            if (load_in_8bit or load_in_4bit) and "quantization_config" not in kwargs:
-                try:
-                    from transformers import BitsAndBytesConfig
-                    kwargs["quantization_config"] = BitsAndBytesConfig(
-                        load_in_8bit=load_in_8bit,
-                        load_in_4bit=load_in_4bit,
-                        llm_int8_skip_modules=['mm_projector', 'vision_tower', 'vision_model'],
-                        bnb_4bit_compute_dtype=torch.float16,
-                        bnb_4bit_use_double_quant=True,
-                        bnb_4bit_quant_type="nf4"
-                    )
-                except ImportError:
-                    pass
-
-            return orig_from_pretrained_model(cls, *args, **kwargs)
-            
-        PreTrainedModel.from_pretrained = patched_from_pretrained_model
-        
-        # Patch STLLaVA's hardcoded vision tower validation which rejects its own 'ZachSun' string
-        try:
-            import llava.model.multimodal_encoder.builder as mm_builder
-            orig_build_vision_tower = mm_builder.build_vision_tower
-            
-            def patched_build_vision_tower(vision_tower_cfg, **kwargs):
-                vision_tower = getattr(vision_tower_cfg, 'mm_vision_tower', getattr(vision_tower_cfg, 'vision_tower', None))
-                if vision_tower and ("ZachSun" in vision_tower or "stllava" in vision_tower.lower()):
-                    from llava.model.multimodal_encoder.clip_encoder import CLIPVisionTower
-                    return CLIPVisionTower(vision_tower, args=vision_tower_cfg, **kwargs)
-                return orig_build_vision_tower(vision_tower_cfg, **kwargs)
-                
-            mm_builder.build_vision_tower = patched_build_vision_tower
-        except ImportError:
-            pass
-
-        with patch.object(transformers.AutoConfig, 'register', classmethod(patched_register_config)), \
-             patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)):
-            from llava.model.builder import load_pretrained_model
-            from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token
-            from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
-            from llava.conversation import conv_templates, SeparatorStyle
+        from llava.model.builder import load_pretrained_model
+        from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token
+        from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+        from llava.conversation import conv_templates, SeparatorStyle
     except ImportError:
         raise ImportError("The 'llava' package is not installed. Please install it from STLLaVA-Med.")
 
