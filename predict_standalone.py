@@ -98,10 +98,11 @@ def main():
                     pass
 
             return orig_from_pretrained_model(cls, *args, **kwargs)
+            
+        PreTrainedModel.from_pretrained = patched_from_pretrained_model
 
         with patch.object(transformers.AutoConfig, 'register', classmethod(patched_register_config)), \
-             patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)), \
-             patch.object(PreTrainedModel, 'from_pretrained', patched_from_pretrained_model):
+             patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)):
             from llava.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token
             from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
