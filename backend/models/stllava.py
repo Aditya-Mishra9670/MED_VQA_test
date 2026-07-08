@@ -323,6 +323,14 @@ class STLLaVAMed:
         # Explicitly create an attention mask to stabilize generation
         attention_mask = torch.ones_like(input_ids)
 
+        from llava.mm_utils import KeywordsStoppingCriteria
+        from llava.conversation import conv_templates
+        
+        conv = conv_templates[self.config.conv_mode].copy()
+        stop_str = conv.sep if conv.sep_style != 1 else conv.sep2
+        keywords = [stop_str]
+        stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
+
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,
@@ -336,6 +344,7 @@ class STLLaVAMed:
                 use_cache=True,
                 pad_token_id=self.tokenizer.pad_token_id if self.tokenizer.pad_token_id is not None else self.tokenizer.eos_token_id,
                 eos_token_id=self.tokenizer.eos_token_id,
+                stopping_criteria=[stopping_criteria],
             )
 
         # Decode output (skip input tokens)
@@ -343,6 +352,11 @@ class STLLaVAMed:
             output_ids[:, input_ids.shape[1]:],
             skip_special_tokens=True,
         )[0].strip()
+        
+        # Clean up SentencePiece artifacts and stop strings
+        output_text = output_text.replace(" ", " ")
+        if output_text.endswith(stop_str):
+            output_text = output_text[:-len(stop_str)].strip()
 
         return output_text
 

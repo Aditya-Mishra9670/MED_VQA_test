@@ -44,6 +44,7 @@ def patch_model_loading_kwargs():
                 kwargs["quantization_config"] = BitsAndBytesConfig(
                     load_in_8bit=load_in_8bit,
                     load_in_4bit=load_in_4bit,
+                    llm_int8_skip_modules=['mm_projector', 'vision_tower', 'vision_model'],
                     bnb_4bit_compute_dtype=torch.float32,
                     bnb_4bit_use_double_quant=True,
                     bnb_4bit_quant_type="nf4"
