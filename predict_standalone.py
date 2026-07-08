@@ -37,6 +37,43 @@ def main():
             kwargs['exist_ok'] = True
             return orig_register_model(config_class, model_class, **kwargs)
             
+        # Patch missing functions for older LLaVA forks (bloom, llama, etc.)
+        def _make_causal_mask(input_ids_shape, dtype, device, past_key_values_length=0):
+            bsz, tgt_len = input_ids_shape
+            mask = torch.full((tgt_len, tgt_len), torch.finfo(dtype).min, device=device)
+            mask_cond = torch.arange(mask.size(-1), device=device)
+            mask.masked_fill_(mask_cond < (mask_cond + 1).view(mask.size(-1), 1), 0)
+            mask = mask.to(dtype)
+            if past_key_values_length > 0:
+                mask = torch.cat([torch.zeros(tgt_len, past_key_values_length, dtype=dtype, device=device), mask], dim=-1)
+            return mask[None, None, :, :].expand(bsz, 1, tgt_len, tgt_len + past_key_values_length)
+
+        def _expand_mask(mask, dtype, tgt_len=None):
+            bsz, src_len = mask.size()
+            tgt_len = tgt_len if tgt_len is not None else src_len
+            expanded_mask = mask[:, None, None, :].expand(bsz, 1, tgt_len, src_len).to(dtype)
+            inverted_mask = 1.0 - expanded_mask
+            return inverted_mask.masked_fill(inverted_mask.to(torch.bool), torch.finfo(dtype).min)
+
+        target_modules = [
+            "transformers.models.bloom.modeling_bloom",
+            "transformers.models.llama.modeling_llama",
+            "transformers.models.opt.modeling_opt",
+            "transformers.models.gpt_neox.modeling_gpt_neox",
+            "transformers.models.gptj.modeling_gptj",
+        ]
+        
+        import importlib
+        for module_name in target_modules:
+            try:
+                module = importlib.import_module(module_name)
+                if not hasattr(module, '_expand_mask'):
+                    setattr(module, '_expand_mask', _expand_mask)
+                if not hasattr(module, '_make_causal_mask'):
+                    setattr(module, '_make_causal_mask', _make_causal_mask)
+            except Exception:
+                pass
+
         with patch.object(transformers.AutoConfig, 'register', classmethod(patched_register_config)), \
              patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)):
             from llava.model.builder import load_pretrained_model
