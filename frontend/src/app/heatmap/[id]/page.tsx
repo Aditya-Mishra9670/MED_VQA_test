@@ -18,6 +18,9 @@ export default function HeatmapWorkspace() {
   const router = useRouter();
   
   const [opacity, setOpacity] = useState(0.7);
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  const [showBoxes, setShowBoxes] = useState(true);
+  const [showMask, setShowMask] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const item = history.find(h => h.id === id);
@@ -34,7 +37,10 @@ export default function HeatmapWorkspace() {
 
   const { originalImageBase64, request, response } = item;
   const hasHeatmap = !!response.heatmap_url;
+  const hasAttention = !!response.attention_overlay_url;
+  const hasBoxes = !!response.boxes_image_url;
   const hasMask = !!response.mask_overlay_url;
+  const hasAnyOverlay = hasHeatmap || hasAttention || hasBoxes || hasMask;
 
   const downloadHeatmap = () => {
     if (!hasHeatmap) return;
@@ -125,7 +131,7 @@ export default function HeatmapWorkspace() {
           </Card>
 
           {/* Controls */}
-          {hasHeatmap && (
+          {hasAnyOverlay && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -134,9 +140,31 @@ export default function HeatmapWorkspace() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {hasHeatmap && (
+                      <Button variant={showHeatmap ? "default" : "outline"} size="sm" onClick={() => setShowHeatmap(!showHeatmap)}>
+                        Grad-CAM Heatmap
+                      </Button>
+                    )}
+                    {hasAttention && (
+                      <Button variant={showHeatmap ? "default" : "outline"} size="sm" onClick={() => setShowHeatmap(!showHeatmap)}>
+                        Attention Rollout
+                      </Button>
+                    )}
+                    {hasBoxes && (
+                      <Button variant={showBoxes ? "default" : "outline"} size="sm" onClick={() => setShowBoxes(!showBoxes)}>
+                        Bounding Boxes
+                      </Button>
+                    )}
+                    {hasMask && (
+                      <Button variant={showMask ? "default" : "outline"} size="sm" onClick={() => setShowMask(!showMask)}>
+                        Segmentation
+                      </Button>
+                    )}
+                  </div>
                   <div>
                     <div className="flex justify-between mb-2 text-sm">
-                      <label>Heatmap Opacity</label>
+                      <label>Overlay Opacity</label>
                       <span className="font-mono">{Math.round(opacity * 100)}%</span>
                     </div>
                     <Slider 
@@ -165,7 +193,7 @@ export default function HeatmapWorkspace() {
               />
               
               {/* Heatmap Overlay */}
-              {hasHeatmap && (
+              {hasHeatmap && showHeatmap && (
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
@@ -177,8 +205,21 @@ export default function HeatmapWorkspace() {
                 </>
               )}
 
+              {/* Attention Rollout Overlay */}
+              {hasAttention && showHeatmap && !hasHeatmap && (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
+                    src={getOutputUrl(response.attention_overlay_url)} 
+                    alt="Attention Rollout" 
+                    className="absolute inset-0 w-full h-full object-contain transition-opacity duration-200 pointer-events-none"
+                    style={{ opacity: opacity }}
+                  />
+                </>
+              )}
+
               {/* Segmentation Mask Overlay */}
-              {hasMask && opacity > 0 && (
+              {hasMask && showMask && (
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
@@ -186,6 +227,19 @@ export default function HeatmapWorkspace() {
                     alt="Segmentation Masks" 
                     className="absolute inset-0 w-full h-full object-contain transition-opacity duration-200 pointer-events-none"
                     style={{ opacity: opacity * 0.8 }}
+                  />
+                </>
+              )}
+
+              {/* Bounding Boxes Overlay */}
+              {hasBoxes && showBoxes && (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
+                    src={getOutputUrl(response.boxes_image_url)} 
+                    alt="Bounding Boxes" 
+                    className="absolute inset-0 w-full h-full object-contain transition-opacity duration-200 pointer-events-none"
+                    style={{ opacity: opacity }}
                   />
                 </>
               )}
