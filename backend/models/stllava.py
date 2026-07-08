@@ -140,12 +140,10 @@ class STLLaVAMed:
         if "llava" not in model_name.lower():
             model_name = "llava-v1.5-7b"
 
-        # When model_path is a local directory (e.g. on Kaggle), pass
-        # model_base so the builder loads the tokenizer from the base
-        # model instead of trying to find tokenizer files inside model_path.
+        # STLLaVA-Med is a full model containing all safetensors and tokenizer files.
+        # We must NOT pass model_base, otherwise the LLaVA builder treats it as a 
+        # delta/LoRA adapter and attempts to load a non-existent 'mm_projector.bin'.
         model_base = None
-        if Path(self.config.model_path).is_dir() and self.config.model_base:
-            model_base = self.config.model_base
 
         # Determine device for loading
         device = self.config.device
