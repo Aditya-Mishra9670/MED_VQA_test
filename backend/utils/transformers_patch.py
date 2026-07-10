@@ -112,6 +112,25 @@ def apply_transformers_patches():
         except Exception:
             pass
 
+    import transformers
+    
+    # 1. Patch EncoderDecoderCache which STLLaVA imports but doesn't actually need
+    # This prevents the 'cannot import name EncoderDecoderCache' crash on transformers < 4.38
+    if not hasattr(transformers, "EncoderDecoderCache"):
+        transformers.EncoderDecoderCache = type("EncoderDecoderCache", (), {})
+        
+    # 2. Patch BertModel for Grounding DINO which crashes on transformers >= 4.38
+    # "Localization failed: 'BertModel' object has no attribute 'get_head_mask'"
+    try:
+        from transformers.models.bert.modeling_bert import BertModel
+        if not hasattr(BertModel, "get_head_mask"):
+            def _get_head_mask(self, attention_mask, num_hidden_layers, is_attention_chunked=False):
+                head_mask = [None] * num_hidden_layers
+                return head_mask
+            BertModel.get_head_mask = _get_head_mask
+    except ImportError:
+        pass
+
     # Patch DynamicCache to be subscriptable for older LLaVA code
     # Older code expects past_key_values to be a tuple-of-tuples:
     #   past_key_values[-1][-1].shape[-2]  → gets value tensor's seq_len

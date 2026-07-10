@@ -94,49 +94,69 @@ class STLLaVAMed:
             raise RuntimeError(f"Failed to load STLLaVA-Med via LLaVA package: {e}") from e
 
     def _load_via_llava(self) -> None:
-        """Load using the LLaVA package's model builder, natively."""
+        """Load using the LLaVA package's model builder with compatibility shims."""
         import transformers
-        if transformers.__version__ != "4.31.0":
-            logger.warning(
-                f"Transformers version is {transformers.__version__}. STLLaVA-Med STRICTLY requires "
-                f"transformers==4.31.0. If you encounter crashes or gibberish outputs, "
-                f"you must downgrade: pip install transformers==4.31.0 accelerate==0.21.0 bitsandbytes==0.41.0"
-            )
+        from unittest.mock import patch
 
-        from huggingface_hub import snapshot_download
-        import os
-        
-        # Download the custom STLLaVA vision tower to satisfy LLaVA's absolute path requirement natively
-        logger.info("Resolving native vision tower (ZachSun/stllava-med-7b-vit)...")
-        cache_dir = "/kaggle/working/vision_tower_cache" if "KAGGLE_KERNEL_RUN_TYPE" in os.environ else str(Path(self.config.model_path).parent / "vision_tower_cache")
-        local_vt_path = snapshot_download(repo_id="ZachSun/stllava-med-7b-vit", local_dir=cache_dir)
+        # Older LLaVA packages try to register 'llava' which conflicts with new transformers
+        orig_register_config = transformers.AutoConfig.register
+        orig_register_model = transformers.AutoModelForCausalLM.register
 
-        from llava.model.builder import load_pretrained_model
-        from llava.mm_utils import get_model_name_from_path
+        def patched_register_config(cls, model_type, config_class, **kwargs):
+            kwargs['exist_ok'] = True
+            return orig_register_config(model_type, config_class, **kwargs)
 
-        model_name = get_model_name_from_path(self.config.model_path)
-        if "llava" not in model_name.lower():
-            model_name = "llava-v1.5-7b"
+        def patched_register_model(cls, config_class, model_class, **kwargs):
+            kwargs['exist_ok'] = True
+            return orig_register_model(config_class, model_class, **kwargs)
 
-        # STLLaVA-Med is a full model containing all safetensors and tokenizer files.
-        model_base = None
-
-        device = self.config.device
-        if device == "mps":
-            device = "cpu"
-
-        logger.info(f"Loading full model natively from {self.config.model_path}...")
-        self.tokenizer, self.model, self.image_processor, self.context_len = (
-            load_pretrained_model(
-                model_path=self.config.model_path,
-                model_base=model_base,
-                model_name=model_name,
-                load_8bit=self.config.load_in_8bit,
-                load_4bit=self.config.load_in_4bit,
-                device=device,
-                mm_vision_tower=local_vt_path  # Natively override the config in memory
-            )
+        # Apply robust backward compatibility patches for deleted transformers functions
+        from backend.utils.transformers_patch import (
+            apply_transformers_patches,
+            patch_tokenizer_loading,
+            patch_model_loading_kwargs
         )
+        apply_transformers_patches()
+
+        with patch.object(transformers.AutoConfig, 'register', classmethod(patched_register_config)), \
+             patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)):
+            
+            from huggingface_hub import snapshot_download
+            import os
+            
+            # Download the custom STLLaVA vision tower to satisfy LLaVA's absolute path requirement natively
+            logger.info("Resolving native vision tower (ZachSun/stllava-med-7b-vit)...")
+            cache_dir = "/kaggle/working/vision_tower_cache" if "KAGGLE_KERNEL_RUN_TYPE" in os.environ else str(Path(self.config.model_path).parent / "vision_tower_cache")
+            local_vt_path = snapshot_download(repo_id="ZachSun/stllava-med-7b-vit", local_dir=cache_dir)
+
+            from llava.model.builder import load_pretrained_model
+            from llava.mm_utils import get_model_name_from_path
+
+            model_name = get_model_name_from_path(self.config.model_path)
+            if "llava" not in model_name.lower():
+                model_name = "llava-v1.5-7b"
+
+            # STLLaVA-Med is a full model containing all safetensors and tokenizer files.
+            model_base = None
+
+            device = self.config.device
+            if device == "mps":
+                device = "cpu"
+
+            logger.info(f"Loading full model natively from {self.config.model_path}...")
+            
+            with patch_tokenizer_loading(), patch_model_loading_kwargs():
+                self.tokenizer, self.model, self.image_processor, self.context_len = (
+                    load_pretrained_model(
+                        model_path=self.config.model_path,
+                        model_base=model_base,
+                        model_name=model_name,
+                        load_8bit=self.config.load_in_8bit,
+                        load_4bit=self.config.load_in_4bit,
+                        device=device,
+                        mm_vision_tower=local_vt_path
+                    )
+                )
 
         if self.config.device == "mps" and device == "cpu":
             try:
@@ -147,7 +167,7 @@ class STLLaVAMed:
 
         self._loaded = True
         logger.info(
-            f"STLLaVA-Med loaded successfully via LLaVA package natively. "
+            f"STLLaVA-Med loaded successfully via LLaVA package. "
             f"Context length: {self.context_len}"
         )
 
