@@ -145,7 +145,20 @@ class STLLaVAMed:
 
             logger.info(f"Loading full model natively from {self.config.model_path}...")
             
-            with patch_tokenizer_loading(), patch_model_loading_kwargs():
+            from llava.model.multimodal_encoder.clip_encoder import CLIPVisionTower
+
+            def patched_build_vision_tower(vision_tower_cfg, **kwargs):
+                vision_tower = getattr(vision_tower_cfg, 'mm_vision_tower', getattr(vision_tower_cfg, 'vision_tower', None))
+                if vision_tower and "stllava-med" in vision_tower.lower():
+                    # Force it to use our localized downloaded vision tower path
+                    return CLIPVisionTower(local_vt_path, args=vision_tower_cfg, **kwargs)
+                raise ValueError(f'Unknown vision tower: {vision_tower}')
+
+            with patch_tokenizer_loading(), \
+                 patch_model_loading_kwargs(), \
+                 patch('llava.model.llava_arch.build_vision_tower', patched_build_vision_tower), \
+                 patch('llava.model.multimodal_encoder.builder.build_vision_tower', patched_build_vision_tower):
+                 
                 self.tokenizer, self.model, self.image_processor, self.context_len = (
                     load_pretrained_model(
                         model_path=self.config.model_path,
@@ -154,7 +167,6 @@ class STLLaVAMed:
                         load_8bit=self.config.load_in_8bit,
                         load_4bit=self.config.load_in_4bit,
                         device=device,
-                        mm_vision_tower=local_vt_path
                     )
                 )
 
