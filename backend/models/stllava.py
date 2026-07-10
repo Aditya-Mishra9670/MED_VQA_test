@@ -94,83 +94,50 @@ class STLLaVAMed:
             raise RuntimeError(f"Failed to load STLLaVA-Med via LLaVA package: {e}") from e
 
     def _load_via_llava(self) -> None:
-        """Load using the LLaVA package's model builder."""
+        """Load using the LLaVA package's model builder, natively."""
         import transformers
-        from unittest.mock import patch
+        if transformers.__version__ != "4.31.0":
+            logger.warning(
+                f"Transformers version is {transformers.__version__}. STLLaVA-Med STRICTLY requires "
+                f"transformers==4.31.0. If you encounter crashes or gibberish outputs, "
+                f"you must downgrade: pip install transformers==4.31.0 accelerate==0.21.0 bitsandbytes==0.41.0"
+            )
 
-        # Older LLaVA packages try to register 'llava' which conflicts with new transformers
-        orig_register_config = transformers.AutoConfig.register
-        orig_register_model = transformers.AutoModelForCausalLM.register
+        from huggingface_hub import snapshot_download
+        import os
+        
+        # Download the custom STLLaVA vision tower to satisfy LLaVA's absolute path requirement natively
+        logger.info("Resolving native vision tower (ZachSun/stllava-med-7b-vit)...")
+        cache_dir = "/kaggle/working/vision_tower_cache" if "KAGGLE_KERNEL_RUN_TYPE" in os.environ else str(Path(self.config.model_path).parent / "vision_tower_cache")
+        local_vt_path = snapshot_download(repo_id="ZachSun/stllava-med-7b-vit", local_dir=cache_dir)
 
-        def patched_register_config(cls, model_type, config_class, **kwargs):
-            kwargs['exist_ok'] = True
-            return orig_register_config(model_type, config_class, **kwargs)
-
-        def patched_register_model(cls, config_class, model_class, **kwargs):
-            kwargs['exist_ok'] = True
-            return orig_register_model(config_class, model_class, **kwargs)
-
-        # Apply robust backward compatibility patches for deleted transformers functions
-        from backend.utils.transformers_patch import (
-            apply_transformers_patches,
-            patch_tokenizer_loading,
-            patch_model_loading_kwargs
-        )
-        apply_transformers_patches()
-
-        with patch.object(transformers.AutoConfig, 'register', classmethod(patched_register_config)), \
-             patch.object(transformers.AutoModelForCausalLM, 'register', classmethod(patched_register_model)):
-            
-            from llava.model.builder import load_pretrained_model
-            from llava.mm_utils import get_model_name_from_path
-            from llava.model.multimodal_encoder.clip_encoder import CLIPVisionTower
-
-            def patched_build_vision_tower(vision_tower_cfg, **kwargs):
-                vision_tower = getattr(vision_tower_cfg, 'mm_vision_tower', getattr(vision_tower_cfg, 'vision_tower', None))
-                if vision_tower and "stllava-med" in vision_tower.lower():
-                    return CLIPVisionTower(vision_tower, args=vision_tower_cfg, **kwargs)
-                raise ValueError(f'Unknown vision tower: {vision_tower}')
+        from llava.model.builder import load_pretrained_model
+        from llava.mm_utils import get_model_name_from_path
 
         model_name = get_model_name_from_path(self.config.model_path)
-
-        # The LLaVA builder routes on 'llava' being present in model_name.
-        # Kaggle dataset paths like '/kaggle/.../stllava01' produce model
-        # names that lack 'llava', causing the builder to take the wrong
-        # code path (plain LM instead of LLaVA).  Ensure 'llava' is present.
         if "llava" not in model_name.lower():
             model_name = "llava-v1.5-7b"
 
         # STLLaVA-Med is a full model containing all safetensors and tokenizer files.
-        # We must NOT pass model_base, otherwise the LLaVA builder treats it as a 
-        # delta/LoRA adapter and crashes when merging quantized 8-bit weights.
         model_base = None
 
-        # Determine device for loading
         device = self.config.device
         if device == "mps":
-            # LLaVA's loader may not handle MPS directly;
-            # load to CPU first then move
             device = "cpu"
 
-        # Wrap with patch_tokenizer_loading to force use_fast=False,
-        # preventing the "Couldn't instantiate the backend tokenizer" error.
-        with patch_tokenizer_loading(), \
-             patch_model_loading_kwargs(), \
-             patch('llava.model.llava_arch.build_vision_tower', patched_build_vision_tower), \
-             patch('llava.model.multimodal_encoder.builder.build_vision_tower', patched_build_vision_tower):
-            
-            self.tokenizer, self.model, self.image_processor, self.context_len = (
-                load_pretrained_model(
-                    model_path=self.config.model_path,
-                    model_base=model_base,
-                    model_name=model_name,
-                    load_8bit=self.config.load_in_8bit,
-                    load_4bit=self.config.load_in_4bit,
-                    device=device,
-                )
+        logger.info(f"Loading full model natively from {self.config.model_path}...")
+        self.tokenizer, self.model, self.image_processor, self.context_len = (
+            load_pretrained_model(
+                model_path=self.config.model_path,
+                model_base=model_base,
+                model_name=model_name,
+                load_8bit=self.config.load_in_8bit,
+                load_4bit=self.config.load_in_4bit,
+                device=device,
+                mm_vision_tower=local_vt_path  # Natively override the config in memory
             )
+        )
 
-        # Move to target device if needed
         if self.config.device == "mps" and device == "cpu":
             try:
                 self.model = self.model.to("mps")
@@ -178,33 +145,9 @@ class STLLaVAMed:
             except Exception:
                 logger.warning("Could not move model to MPS, staying on CPU")
 
-        # FIX: The LLaVA builder instantiates the vision tower AFTER from_pretrained,
-        # which causes the vision tower weights in the safetensors to be discarded.
-        # Furthermore, LLaVA's delta weight application corrupts the 'cluster' projector
-        # by adding the full weights to random weights.
-        # We manually load them both back in to prevent random vision embeddings.
-        try:
-            from safetensors.torch import load_file
-            import glob
-            
-            restored = 0
-            for sf_path in glob.glob(str(Path(self.config.model_path) / "*.safetensors")):
-                state_dict = load_file(sf_path)
-                
-                # Extract vision tower and mm_projector weights
-                vt_proj_state = {k: v for k, v in state_dict.items() if "vision_tower" in k or "mm_projector" in k}
-                if vt_proj_state:
-                    self.model.load_state_dict(vt_proj_state, strict=False)
-                    restored += len(vt_proj_state)
-                    
-            if restored > 0:
-                logger.info(f"Restored {restored} vision tower & projector weights from safetensors.")
-        except Exception as e:
-            logger.warning(f"Failed to restore vision tower weights: {e}")
-
         self._loaded = True
         logger.info(
-            f"STLLaVA-Med loaded successfully via LLaVA package. "
+            f"STLLaVA-Med loaded successfully via LLaVA package natively. "
             f"Context length: {self.context_len}"
         )
 
