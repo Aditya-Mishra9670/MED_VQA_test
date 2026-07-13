@@ -101,12 +101,24 @@ class GroundingDINOWrapper:
                     import groundingdino
                 except ImportError:
                     logger.info("GroundingDINO package not found. Auto-installing...")
-                    import subprocess
+                    import os
                     import sys
-                    subprocess.run(
-                        [sys.executable, "-m", "pip", "install", "-q", "git+https://github.com/IDEA-Research/GroundingDINO.git"],
-                        check=True
-                    )
+                    import subprocess
+                    
+                    env = os.environ.copy()
+                    if "CUDA_HOME" not in env:
+                        env["CUDA_HOME"] = "/usr/local/cuda"
+                    
+                    try:
+                        subprocess.run(
+                            [sys.executable, "-m", "pip", "install", "git+https://github.com/IDEA-Research/GroundingDINO.git"],
+                            check=True,
+                            env=env
+                        )
+                    except subprocess.CalledProcessError as e:
+                        logger.error("GroundingDINO build failed. You may need to install it manually.")
+                        raise ImportError("GroundingDINO could not be installed.")
+                    
                     import groundingdino
                 
                 import urllib.request
