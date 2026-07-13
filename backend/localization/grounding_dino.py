@@ -125,7 +125,7 @@ class GroundingDINOWrapper:
         results_hf = self.processor.post_process_grounded_object_detection(
             outputs,
             inputs.input_ids,
-            box_threshold=box_thresh,
+            threshold=box_thresh,
             text_threshold=text_thresh,
             target_sizes=[image.size[::-1]]
         )[0]
