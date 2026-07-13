@@ -299,8 +299,9 @@ class STLLaVAMed:
             prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt"
         ).unsqueeze(0).to(self.config.device)
 
-        # Explicitly create an attention mask to stabilize generation
-        attention_mask = torch.ones_like(input_ids)
+        # Explicitly passing attention_mask with unexpanded input_ids breaks LLaVA generation 
+        # because the input gets expanded with image patches inside forward(), causing mask size mismatch.
+        # For batch size 1, attention_mask is safely omitted.
 
         from llava.mm_utils import KeywordsStoppingCriteria
         from llava.conversation import conv_templates
@@ -313,7 +314,6 @@ class STLLaVAMed:
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,
-                attention_mask=attention_mask,
                 images=image_tensor,
                 do_sample=temp > 0,
                 temperature=temp if temp > 0 else 1.0,
