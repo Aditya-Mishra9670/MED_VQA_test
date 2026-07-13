@@ -57,6 +57,22 @@ def _vit_reshape_transform(
     return result
 
 
+class HFModelWrapper(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+
+    def forward(self, x):
+        out = self.model(x)
+        if hasattr(out, "pooler_output") and out.pooler_output is not None:
+            return out.pooler_output
+        if hasattr(out, "last_hidden_state"):
+            return out.last_hidden_state[:, 0, :]
+        if isinstance(out, tuple):
+            return out[0]
+        return out
+
+
 class GradCAMExplainer:
     """
     Grad-CAM based visual explainability for medical VQA.
@@ -165,7 +181,7 @@ class GradCAMExplainer:
                 reshape_transform = lambda t: _vit_reshape_transform(t, h, w)
 
             return GradCAM(
-                model=self.model,
+                model=HFModelWrapper(self.model),
                 target_layers=self.target_layers,
                 reshape_transform=reshape_transform,
             )
