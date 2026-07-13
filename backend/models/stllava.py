@@ -159,16 +159,24 @@ class STLLaVAMed:
                  patch('llava.model.llava_arch.build_vision_tower', patched_build_vision_tower), \
                  patch('llava.model.multimodal_encoder.builder.build_vision_tower', patched_build_vision_tower):
                  
-                self.tokenizer, self.model, self.image_processor, self.context_len = (
-                    load_pretrained_model(
-                        model_path=self.config.model_path,
-                        model_base=model_base,
-                        model_name=model_name,
-                        load_8bit=self.config.load_in_8bit,
-                        load_4bit=self.config.load_in_4bit,
-                        device=device,
+                import logging
+                t_logger = logging.getLogger("transformers.modeling_utils")
+                old_level = t_logger.level
+                t_logger.setLevel(logging.ERROR)
+                
+                try:
+                    self.tokenizer, self.model, self.image_processor, self.context_len = (
+                        load_pretrained_model(
+                            model_path=self.config.model_path,
+                            model_base=model_base,
+                            model_name=model_name,
+                            load_8bit=self.config.load_in_8bit,
+                            load_4bit=self.config.load_in_4bit,
+                            device=device,
+                        )
                     )
-                )
+                finally:
+                    t_logger.setLevel(old_level)
 
         if self.config.device == "mps" and device == "cpu":
             try:

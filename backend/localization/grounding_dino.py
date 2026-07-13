@@ -97,7 +97,18 @@ class GroundingDINOWrapper:
         config_path_obj = Path(self.config_path)
         if not config_path_obj.exists():
             try:
-                import groundingdino
+                try:
+                    import groundingdino
+                except ImportError:
+                    logger.info("GroundingDINO package not found. Auto-installing...")
+                    import subprocess
+                    import sys
+                    subprocess.run(
+                        [sys.executable, "-m", "pip", "install", "-q", "git+https://github.com/IDEA-Research/GroundingDINO.git"],
+                        check=True
+                    )
+                    import groundingdino
+                
                 import urllib.request
                 gdino_dir = Path(groundingdino.__file__).parent
                 fallback_config = gdino_dir / "config" / Path(self.config_path).name
