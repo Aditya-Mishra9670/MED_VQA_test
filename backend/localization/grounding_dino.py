@@ -106,10 +106,18 @@ class GroundingDINOWrapper:
                     import subprocess
                     
                     env = os.environ.copy()
-                    if "CUDA_HOME" not in env:
+                    if not env.get("CUDA_HOME"):
                         env["CUDA_HOME"] = "/usr/local/cuda"
+                    if "/usr/local/cuda/bin" not in env.get("PATH", ""):
+                        env["PATH"] = env.get("PATH", "") + ":/usr/local/cuda/bin"
+                    
+                    # Kaggle T4/P100 and Colab support
+                    env["TORCH_CUDA_ARCH_LIST"] = "6.0;7.0;7.5;8.0;8.6"
                     
                     try:
+                        # Install build dependencies explicitly before using --no-build-isolation
+                        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "wheel", "cython"], check=True)
+                        
                         subprocess.run(
                             [sys.executable, "-m", "pip", "install", "--no-build-isolation", "git+https://github.com/IDEA-Research/GroundingDINO.git"],
                             check=True,
