@@ -99,7 +99,7 @@ class ModelLoader:
                     self._grounding_dino = GroundingDINOWrapper(
                         config_path=self._settings.grounding_dino_config,
                         checkpoint_path=checkpoint,
-                        device=self._settings.resolved_device,
+                        device=self._settings.secondary_device,
                     )
                     self._grounding_dino.load()
         return self._grounding_dino
@@ -127,7 +127,7 @@ class ModelLoader:
                     self._sam2 = SAM2Wrapper(
                         checkpoint_path=checkpoint,
                         config_path=self._settings.sam2_config,
-                        device=self._settings.resolved_device,
+                        device=self._settings.secondary_device,
                     )
                     self._sam2.load()
         return self._sam2

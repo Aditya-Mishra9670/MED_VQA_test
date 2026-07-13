@@ -170,6 +170,24 @@ class Settings(BaseSettings):
         return self.device
 
     @property
+    def secondary_device(self) -> str:
+        """Resolve a secondary GPU for vision models if available."""
+        import logging
+        logger = logging.getLogger("backend.config")
+        
+        if self.resolved_device == "cuda":
+            try:
+                import torch
+                if torch.cuda.device_count() > 1:
+                    logger.info(f"Detected {torch.cuda.device_count()} GPUs. Routing secondary models to cuda:1.")
+                    return "cuda:1"
+                else:
+                    logger.info("Only 1 GPU detected. Routing secondary models to cuda:0.")
+            except ImportError:
+                pass
+        return self.resolved_device
+
+    @property
     def effective_quantization(self) -> dict:
         """Determine effective quantization based on device and memory."""
         device = self.resolved_device
