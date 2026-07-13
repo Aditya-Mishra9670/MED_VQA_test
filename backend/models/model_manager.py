@@ -240,11 +240,10 @@ class ModelManager:
                 if result.returncode == 0:
                     # Verify installation
                     importlib.invalidate_caches()
-                    try:
-                        import llava  # noqa: F401
+                    if self._check_llava_package():
                         logger.info(f"LLaVA package installed successfully from {source}")
                         return True
-                    except ImportError:
+                    else:
                         continue
                 else:
                     logger.debug(f"pip install failed: {result.stderr[:200]}")

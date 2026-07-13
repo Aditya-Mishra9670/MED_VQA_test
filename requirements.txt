@@ -45,7 +45,7 @@ httpx>=0.26.0
 psutil>=5.9.0
 
 # ---- Quantization (optional, GPU only) ----
-bitsandbytes>=0.43.0
+bitsandbytes>=0.46.1
 
 # ---- Testing ----
 pytest>=8.0.0
