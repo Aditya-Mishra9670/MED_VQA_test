@@ -111,7 +111,7 @@ class GroundingDINOWrapper:
                     
                     try:
                         subprocess.run(
-                            [sys.executable, "-m", "pip", "install", "git+https://github.com/IDEA-Research/GroundingDINO.git"],
+                            [sys.executable, "-m", "pip", "install", "--no-build-isolation", "git+https://github.com/IDEA-Research/GroundingDINO.git"],
                             check=True,
                             env=env
                         )
