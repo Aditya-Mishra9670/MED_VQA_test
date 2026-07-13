@@ -87,85 +87,16 @@ class GroundingDINOWrapper:
                     f"and auto-download failed: {e}"
                 )
 
-        if not checkpoint.exists():
-            raise RuntimeError(
-                f"Grounding DINO checkpoint not found: {self.checkpoint_path}. "
-                f"Run: python -m backend.models.model_manager to download."
-            )
+        pass # Replaced with HuggingFace implementation
 
-        # Ensure config exists (fallback to site-packages or download)
-        config_path_obj = Path(self.config_path)
-        if not config_path_obj.exists():
-            try:
-                try:
-                    import groundingdino
-                except ImportError:
-                    logger.info("GroundingDINO package not found. Auto-installing...")
-                    import os
-                    import sys
-                    import subprocess
-                    
-                    env = os.environ.copy()
-                    if not env.get("CUDA_HOME"):
-                        env["CUDA_HOME"] = "/usr/local/cuda"
-                    if "/usr/local/cuda/bin" not in env.get("PATH", ""):
-                        env["PATH"] = env.get("PATH", "") + ":/usr/local/cuda/bin"
-                    
-                    # Kaggle T4/P100 and Colab support
-                    env["TORCH_CUDA_ARCH_LIST"] = "6.0;7.0;7.5;8.0;8.6"
-                    
-                    try:
-                        # Install build dependencies explicitly before using --no-build-isolation
-                        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "wheel", "cython"], check=True)
-                        
-                        subprocess.run(
-                            [sys.executable, "-m", "pip", "install", "--no-build-isolation", "git+https://github.com/IDEA-Research/GroundingDINO.git"],
-                            check=True,
-                            env=env
-                        )
-                    except subprocess.CalledProcessError as e:
-                        logger.error("GroundingDINO build failed. You may need to install it manually.")
-                        raise ImportError("GroundingDINO could not be installed.")
-                    
-                    import groundingdino
-                
-                import urllib.request
-                gdino_dir = Path(groundingdino.__file__).parent
-                fallback_config = gdino_dir / "config" / Path(self.config_path).name
-                if fallback_config.exists():
-                    self.config_path = str(fallback_config)
-                    logger.info(f"Found config in site-packages: {self.config_path}")
-                else:
-                    fallback_config.parent.mkdir(parents=True, exist_ok=True)
-                    url = f"https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/main/groundingdino/config/{Path(self.config_path).name}"
-                    urllib.request.urlretrieve(url, fallback_config)
-                    self.config_path = str(fallback_config)
-                    logger.info(f"Downloaded GroundingDINO config to: {self.config_path}")
-            except Exception as e:
-                logger.warning(f"Failed to auto-resolve config path: {e}")
-
-        logger.info(f"Loading Grounding DINO from {self.checkpoint_path}...")
-
-        try:
-            from groundingdino.util.inference import load_model
-
-            self.model = load_model(
-                self.config_path,
-                self.checkpoint_path,
-                device=self.device,
-            )
-            self._loaded = True
-            logger.info("Grounding DINO loaded successfully.")
-
-        except ImportError as e:
-            logger.error(
-                f"Grounding DINO package not installed. "
-                f"Install from: https://github.com/IDEA-Research/GroundingDINO — {e}"
-            )
-            raise RuntimeError(
-                "GroundingDINO package not installed. "
-                "Install with: pip install git+https://github.com/IDEA-Research/GroundingDINO.git"
-            ) from e
+        logger.info(f"Loading Grounding DINO natively via HuggingFace transformers (bypassing compilation)...")
+        from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection
+        
+        # Load the HuggingFace version of groundingdino_swint_ogc (IDEA-Research/grounding-dino-tiny)
+        self.processor = AutoProcessor.from_pretrained("IDEA-Research/grounding-dino-tiny")
+        self.model = AutoModelForZeroShotObjectDetection.from_pretrained("IDEA-Research/grounding-dino-tiny").to(self.device)
+        self._loaded = True
+        logger.info("Grounding DINO loaded successfully via transformers.")
 
     @timed
     def predict(
@@ -175,76 +106,40 @@ class GroundingDINOWrapper:
         box_threshold: Optional[float] = None,
         text_threshold: Optional[float] = None,
     ) -> list[dict]:
-        """
-        Detect regions matching the text prompt.
-
-        Args:
-            image: PIL Image to search in.
-            text_prompt: Text description of the target (e.g., "tumor").
-            box_threshold: Override default box confidence threshold.
-            text_threshold: Override default text confidence threshold.
-
-        Returns:
-            List of detected regions, each as:
-            {"x": int, "y": int, "w": int, "h": int, "score": float, "label": str}
-        """
         if not self._loaded:
             raise RuntimeError("Model not loaded. Call load() first.")
 
         box_thresh = box_threshold or self.box_threshold
         text_thresh = text_threshold or self.text_threshold
 
-        from groundingdino.util.inference import (
-            load_image as gdino_load_image,
-            predict as gdino_predict,
-        )
+        # Ensure text prompt is properly formatted with trailing period for HF version
+        if not text_prompt.endswith("."):
+            text_prompt += "."
 
-        # Convert PIL to format expected by Grounding DINO
-        # Use a safe temp file with proper cleanup
-        tmp_path = None
-        try:
-            with tempfile.NamedTemporaryFile(
-                suffix=".png", delete=False, prefix="gdino_"
-            ) as f:
-                tmp_path = f.name
-                image.save(tmp_path)
-
-            image_source, image_transformed = gdino_load_image(tmp_path)
-        finally:
-            # Always clean up temp file
-            if tmp_path and os.path.exists(tmp_path):
-                try:
-                    os.unlink(tmp_path)
-                except OSError:
-                    pass
-
-        # Run prediction
-        boxes, logits, phrases = gdino_predict(
-            model=self.model,
-            image=image_transformed,
-            caption=text_prompt,
+        inputs = self.processor(images=image, text=text_prompt, return_tensors="pt").to(self.device)
+        
+        import torch
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+            
+        results_hf = self.processor.post_process_grounded_object_detection(
+            outputs,
+            inputs.input_ids,
             box_threshold=box_thresh,
             text_threshold=text_thresh,
-            device=self.device,
-        )
-
-        # Convert normalized boxes to pixel coordinates
-        h, w = image_source.shape[:2]
+            target_sizes=[image.size[::-1]]
+        )[0]
+        
         results = []
-
-        for box, score, label in zip(boxes, logits, phrases):
-            # box format: cx, cy, w, h (normalized)
-            cx, cy, bw, bh = box.tolist()
-            x = int((cx - bw / 2) * w)
-            y = int((cy - bh / 2) * h)
-            box_w = int(bw * w)
-            box_h = int(bh * h)
-
+        for score, label, box in zip(results_hf["scores"], results_hf["labels"], results_hf["boxes"]):
+            box = [round(i, 2) for i in box.tolist()]
+            x1, y1, x2, y2 = box
+            
             results.append({
-                "x": max(0, x),
-                "y": max(0, y),
-                "w": min(box_w, w - max(0, x)),
-                "h": min(box_h, h - max(0, y)),
+                "x": int(max(0, x1)),
+                "y": int(max(0, y1)),
+                "w": int(max(0, x2 - x1)),
+                "h": int(max(0, y2 - y1)),
                 "score": round(float(score), 4),
                 "label": label,
             })
