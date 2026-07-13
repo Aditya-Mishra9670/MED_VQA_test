@@ -173,6 +173,7 @@ class STLLaVAMed:
                             load_8bit=self.config.load_in_8bit,
                             load_4bit=self.config.load_in_4bit,
                             device=device,
+                            device_map="cuda:0",
                         )
                     )
                 finally:

@@ -52,6 +52,7 @@ export default function AnalyzePage() {
         question: question,
         enable_gradcam: true,
         enable_localization: true,
+        temperature: 0.0,
         signal: abortControllerRef.current.signal,
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
