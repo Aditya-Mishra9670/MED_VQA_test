@@ -1,4 +1,4 @@
-# B.Tech Progress Report
+# Project Progress Report
 
 ## 1. Cover Page
 
@@ -218,29 +218,7 @@ The project is currently in the **Integration and Frontend Development** phase. 
 
 ---
 
-## 20. Timeline
-
-```mermaid
-gantt
-    title Project Implementation Timeline
-    dateFormat  YYYY-MM-DD
-    section Phase 1: Foundation
-    Repository Setup & Architecture    :done,    p1, 2024-01-01, 14d
-    Backend API Development            :done,    p2, after p1, 14d
-    section Phase 2: Core AI
-    STLLaVA-Med Integration            :done,    p3, after p2, 21d
-    Grad-CAM Explainability            :done,    p4, after p3, 14d
-    section Phase 3: Localization
-    Grounding DINO Integration         :done,    p5, after p4, 14d
-    SAM2 Integration                   :done,    p6, after p5, 14d
-    section Phase 4: Finalization
-    Frontend UI Development            :active,  p7, after p6, 21d
-    Evaluation & Benchmarking          :         p8, after p7, 14d
-```
-
----
-
-## 21. Future Work (Prioritized)
+## 20. Future Work (Prioritized)
 
 1.  **Frontend Completion (High Priority):** Wire the Next.js UI components to the FastAPI `/predict` endpoint to visualize the generated heatmaps and segmentation masks.
 2.  **Benchmarking (High Priority):** Run evaluation scripts on standard datasets (VQA-RAD, Slake) to calculate actual Accuracy, BLEU, and ROUGE scores.
@@ -249,13 +227,13 @@ gantt
 
 ---
 
-## 22. Conclusion
+## 21. Conclusion
 
 The "Medical Visual Question Answering System" is demonstrating excellent progress. The technical implementation of the backend is highly sophisticated, successfully merging Large Language Models with precise computer vision techniques (segmentation and explainability). The codebase reflects senior-level architectural decisions, robust error handling, and modern deployment practices. Upon completion of the frontend interface and empirical evaluation, this project will stand as a highly impactful and clinically relevant B.Tech implementation.
 
 ---
 
-## 23. References
+## 22. References
 1.  *Liu, H. et al. "Visual Instruction Tuning" (LLaVA)*
 2.  *Sun, Z. et al. "STLLaVA-Med"*
 3.  *Selvaraju, R. R. et al. "Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization"*
